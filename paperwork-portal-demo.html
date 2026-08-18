@@ -1,0 +1,3230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Property Paperwork Portal (Demo)</title>
+
+<!-- Runs before anything renders. If this lived with the rest of the script at
+     the bottom of the page, a dark-mode user would get a white flash on every
+     load while the browser waited to be told otherwise. -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch (e) { /* private mode — fall back to the device setting */ }
+  })();
+</script>
+
+<style>
+  /* ---------- Palette ----------
+     Every colour in this file comes from a variable declared here. Nothing
+     below this block hardcodes a colour, which is what makes the dark theme
+     a second list of values rather than a second stylesheet.
+
+     Theme resolution, in order:
+       1. html[data-theme="dark"]  — the user picked dark
+       2. html[data-theme="light"] — the user picked light
+       3. neither                  — follow the device setting
+     The toggle writes attribute + localStorage; clearing it returns to 3.
+     -------------------------------------------------------------------- */
+  :root {
+    --navy:        #173b66;
+    --navy-dark:   #0f2947;
+    --navy-tint:   #e7edf6;
+    --page-bg:     #f2f5f9;
+    --surface:     #ffffff;   /* cards, header, dialogs */
+    --surface-2:   #fbfbfc;   /* upload zone */
+    --text:        #14213d;
+    --label:       #555;
+    --label-strong:#444;
+    --muted:       #777;
+    --muted-light: #999;
+    --faint:       #bbb;
+    --hint:        #aaa;
+    --border:      #ddd;
+    --border-strong:#ccc;
+    --field-bg:    #f7f8fa;
+    --pill-bg:     #eee;
+    --pill-fg:     #888;
+    --on-accent:   #fff;      /* text sitting on --navy or --navy-dark */
+    --overlay:     rgba(0,0,0,0.55);
+
+    /* Lift inner surfaces off a colour-tinted bucket card */
+    --veil-strong: rgba(255,255,255,0.75);
+    --veil-soft:   rgba(255,255,255,0.55);
+
+    --green-bg:     #dff2e1;
+    --green-fg:     #2e7d32;
+    --green-border: #8fbf95;
+    --red-bg:       #fbe0df;
+    --red-fg:       #c0392b;
+    --red-border:   #d99a94;
+
+    --radius:  12px;
+    --shadow:        0 2px 8px rgba(0,0,0,0.05);
+    --shadow-hover:  0 2px 12px rgba(0,0,0,0.1);
+    --shadow-header: 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-card:   0 4px 20px rgba(0,0,0,0.08);
+    --shadow-modal:  0 10px 40px rgba(0,0,0,0.3);
+    --shadow-toast:  0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  /* ---------- Dark theme ----------
+     Only values change. If you add a colour anywhere else in this file,
+     add it to both lists rather than writing a hex code inline.
+
+     Notes on the choices:
+     - Shadows barely register on a dark background, so borders do more of
+       the separating work and the shadows are deepened.
+     - Status tints are desaturated. A light-mode green card at full
+       strength glows unpleasantly on a dark screen at night, which is
+       exactly when someone would be using this.
+     - The veils flip from white to a light wash, since inner surfaces now
+       need to sit *above* a dark tinted card rather than below a light one.
+     ------------------------------------------------------------------ */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy:        #2f6fb5;
+      --navy-dark:   #0d1b2a;
+      --navy-tint:   #1c2c42;
+      --page-bg:     #0f1620;
+      --surface:     #182230;
+      --surface-2:   #1d2837;
+      --text:        #e6ecf3;
+      --label:       #b9c4d1;
+      --label-strong:#cdd7e2;
+      --muted:       #9aa7b6;
+      --muted-light: #8794a3;
+      --faint:       #6b7887;
+      --hint:        #6b7887;
+      --border:      #2c3a4c;
+      --border-strong:#3a4a5e;
+      --field-bg:    #131c27;
+      --pill-bg:     #2a3646;
+      --pill-fg:     #a6b3c2;
+      --on-accent:   #fff;
+      --overlay:     rgba(0,0,0,0.7);
+
+      --veil-strong: rgba(255,255,255,0.09);
+      --veil-soft:   rgba(255,255,255,0.05);
+
+      --green-bg:     #16301c;
+      --green-fg:     #7fd18c;
+      --green-border: #2f6b3c;
+      --red-bg:       #3a1a19;
+      --red-fg:       #f08a80;
+      --red-border:   #7a3630;
+
+      --shadow:        0 2px 8px rgba(0,0,0,0.45);
+      --shadow-hover:  0 2px 12px rgba(0,0,0,0.6);
+      --shadow-header: 0 1px 4px rgba(0,0,0,0.5);
+      --shadow-card:   0 4px 20px rgba(0,0,0,0.55);
+      --shadow-modal:  0 10px 40px rgba(0,0,0,0.75);
+      --shadow-toast:  0 4px 16px rgba(0,0,0,0.6);
+    }
+  }
+
+  /* Same values again for an explicit choice, which has to win over the
+     device setting in both directions. */
+  :root[data-theme="dark"] {
+    --navy:        #2f6fb5;
+    --navy-dark:   #0d1b2a;
+    --navy-tint:   #1c2c42;
+    --page-bg:     #0f1620;
+    --surface:     #182230;
+    --surface-2:   #1d2837;
+    --text:        #e6ecf3;
+    --label:       #b9c4d1;
+    --label-strong:#cdd7e2;
+    --muted:       #9aa7b6;
+    --muted-light: #8794a3;
+    --faint:       #6b7887;
+    --hint:        #6b7887;
+    --border:      #2c3a4c;
+    --border-strong:#3a4a5e;
+    --field-bg:    #131c27;
+    --pill-bg:     #2a3646;
+    --pill-fg:     #a6b3c2;
+    --on-accent:   #fff;
+    --overlay:     rgba(0,0,0,0.7);
+
+    --veil-strong: rgba(255,255,255,0.09);
+    --veil-soft:   rgba(255,255,255,0.05);
+
+    --green-bg:     #16301c;
+    --green-fg:     #7fd18c;
+    --green-border: #2f6b3c;
+    --red-bg:       #3a1a19;
+    --red-fg:       #f08a80;
+    --red-border:   #7a3630;
+
+    --shadow:        0 2px 8px rgba(0,0,0,0.45);
+    --shadow-hover:  0 2px 12px rgba(0,0,0,0.6);
+    --shadow-header: 0 1px 4px rgba(0,0,0,0.5);
+    --shadow-card:   0 4px 20px rgba(0,0,0,0.55);
+    --shadow-modal:  0 10px 40px rgba(0,0,0,0.75);
+    --shadow-toast:  0 4px 16px rgba(0,0,0,0.6);
+  }
+
+  /* Native controls (form fields, scrollbars, the date picker) follow this. */
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { color-scheme: dark; }
+  }
+  :root[data-theme="dark"]  { color-scheme: dark; }
+  :root[data-theme="light"] { color-scheme: light; }
+
+  /* ---------- Base ---------- */
+  * { box-sizing: border-box; }
+
+  /* Any rule setting `display` (flex, grid, inline-block…) outranks the
+     browser's built-in [hidden] rule, which silently leaves "hidden"
+     elements on screen. This guard makes the hidden attribute reliable. */
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--text);
+  }
+  .banner {
+    background: var(--navy-dark);
+    color: var(--on-accent);
+    text-align: center;
+    font-size: 12px;
+    padding: 6px;
+    letter-spacing: .3px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    padding: 14px 24px;
+    box-shadow: var(--shadow-header);
+  }
+  /* Shown whenever a load is in flight. Reads used to be instant; they
+     now cross a network, and silence would read as the app being broken. */
+  .loading-bar {
+    background: var(--navy-tint);
+    color: var(--navy);
+    text-align: center;
+    font-size: 12px;
+    padding: 5px;
+  }
+  /* Stays until reload. A toast is not enough for "your approval did not
+     save" — that needs to still be on screen a minute later. */
+  .sync-warning {
+    background: var(--red-bg);
+    color: var(--red-fg);
+    text-align: center;
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  header h2 { margin: 0; font-size: 18px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+  .theme-toggle:hover { color: var(--navy); border-color: var(--navy); }
+  /* On the login screen there is no header to sit in. */
+  .login-card .theme-toggle { position: absolute; top: 14px; right: 14px; }
+  .login-card { position: relative; }
+
+  .screen { display: none; max-width: 480px; margin: 40px auto; padding: 0 20px; }
+  .screen.active { display: block; }
+  .screen.wide { max-width: 640px; }
+
+  /* Shared card surface */
+  .calendar,
+  .day-status-card,
+  .total-card,
+  .bucket-card,
+  .comments-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  /* Shared two-column grid (totals + buckets) */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-2.single { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* Shared small button */
+  .btn {
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--label);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn.is-approved { background: var(--green-bg); border-color: var(--green-border); color: var(--green-fg); }
+  .btn.is-denied   { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red-fg); }
+  .btn-navy { border-color: var(--navy); color: var(--navy); }
+  .btn-navy:hover { background: var(--navy-tint); }
+
+  /* Shared status pill */
+  .badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge.pending  { background: var(--pill-bg);            color: var(--pill-fg); }
+  .badge.approved,
+  .badge.in-drive { background: var(--green-bg); color: var(--green-fg); }
+  .badge.denied,
+  .badge.past-due { background: var(--red-bg);   color: var(--red-fg); }
+
+  .field-label { font-size: 12.5px; font-weight: 600; color: var(--label-strong); }
+
+  .nothing-assigned {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .nothing-assigned .name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .nothing-assigned p { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.5; }
+
+  /* ---------- File preview ---------- */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    width: min(900px, 100%);
+    height: min(85vh, 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-modal);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .modal iframe { flex: 1; width: 100%; border: 0; background: var(--field-bg); }
+  .modal-note { padding: 8px 14px; font-size: 11px; color: var(--faint); border-top: 1px solid var(--border); }
+
+  .file-item .preview {
+    color: var(--faint);
+    cursor: pointer;
+    font-size: 13px;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .file-item .preview:hover { color: var(--navy); }
+
+  /* ---------- Login ---------- */
+  .login-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    padding: 34px;
+    margin-top: 60px;
+  }
+  .login-card h1 { font-size: 20px; margin: 0 0 4px; }
+  .login-card p  { font-size: 13px; color: var(--pill-fg); margin: 0 0 10px; }
+  label { display: block; font-size: 13px; margin: 14px 0 6px; color: var(--label); }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .primary-btn {
+    width: 100%;
+    margin-top: 22px;
+    background: var(--navy);
+    color: var(--on-accent);
+    border: none;
+    padding: 11px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .primary-btn:hover { background: var(--navy-dark); }
+  .hint  { font-size: 12px; color: var(--hint); margin-top: 12px; text-align: center; }
+  .error { color: var(--red-fg); font-size: 13px; margin-top: 10px; display: none; }
+
+  /* ---------- Property list ---------- */
+  .property-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  .property-card:hover { box-shadow: var(--shadow-hover); }
+  .property-card .name { font-size: 15px; font-weight: 600; }
+  .property-card .sub  { font-size: 12px; color: var(--muted-light); margin-top: 2px; }
+  .property-card .meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .property-card .status {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--pill-bg);
+    color: var(--muted);
+  }
+  .property-card .status.done { background: var(--green-bg); color: var(--green-fg); }
+
+  /* ---------- Access code admin ---------- */
+  .user-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .user-card .name { font-size: 15px; font-weight: 600; }
+  .user-card .sub  { font-size: 12px; color: var(--muted-light); margin-top: 2px; }
+  .user-card .code-value {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    letter-spacing: .5px;
+  }
+  .user-actions { display: flex; align-items: center; gap: 8px; }
+  .user-card.revoked .name,
+  .user-card.revoked .sub,
+  .user-card.revoked .code-value { opacity: .6; }
+  .you-tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--muted-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .btn-danger { border-color: var(--red-border); color: var(--red-fg); }
+  .btn-danger:hover { background: var(--red-bg); }
+
+  .admin-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .user-form-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .user-form-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+  }
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+  .form-grid label { margin: 0 0 5px; }
+  .user-form-card input[type="text"],
+  .user-form-card input[type="email"],
+  .user-form-card input[type="tel"],
+  .user-form-card select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--surface);
+  }
+  .picker-hint { font-size: 11.5px; color: var(--muted-light); margin-bottom: 6px; }
+  .picker-hint:empty { display: none; }
+  .property-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    margin-top: 4px;
+  }
+  @media (max-width: 560px) {
+    .property-picker { grid-template-columns: 1fr; }
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--label);
+    cursor: pointer;
+  }
+  .check-row input { margin: 0; cursor: pointer; }
+
+  .status-actor { font-size: 11px; color: var(--muted-light); }
+
+  /* ---------- Calendar ---------- */
+  .back-link {
+    font-size: 13px;
+    color: var(--pill-fg);
+    cursor: pointer;
+    margin-bottom: 14px;
+    display: inline-block;
+  }
+  .calendar { margin-bottom: 14px; padding: 16px; }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .cal-nav {
+    cursor: pointer;
+    padding: 2px 12px;
+    color: var(--navy);
+    user-select: none;
+    border-radius: 6px;
+  }
+  .cal-nav:hover { background: var(--navy-tint); }
+  .cal-weekdays, .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+  }
+  .cal-weekdays span { font-size: 11px; color: var(--muted-light); padding-bottom: 6px; }
+  .cal-day {
+    position: relative;
+    padding: 9px 0;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--label);
+  }
+  .cal-day:hover    { background: var(--page-bg); }
+  .cal-day.empty    { cursor: default; }
+  .cal-day.today    { font-weight: 700; color: var(--navy); }
+  .cal-day.selected { background: var(--navy); color: var(--on-accent); }
+  .cal-day.has-files::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--green-fg);
+  }
+  .cal-day.selected.has-files::after { background: var(--surface); }
+  .cal-day.approved { box-shadow: inset 0 0 0 2px var(--green-border); }
+  .cal-day.past-due { box-shadow: inset 0 0 0 2px var(--red-border); }
+  .cal-day.selected.approved,
+  .cal-day.selected.past-due { box-shadow: none; }
+
+  .selected-day-label { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+
+  /* ---------- Day status ---------- */
+  .day-status-card {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .day-status-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* ---------- Totals ---------- */
+  .totals { margin-bottom: 14px; }
+  .total-card label { margin: 0 0 8px; }
+  .total-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 10px;
+  }
+  .total-input-wrap span { color: var(--muted-light); font-size: 14px; }
+  .total-input-wrap input {
+    border: none;
+    padding: 9px 6px;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+  }
+  .total-input-wrap.saved { border-color: var(--green-border); }
+  .total-input-wrap input[readonly] { color: var(--pill-fg); background: var(--field-bg); }
+
+  /* ---------- Upload buckets ---------- */
+  .bucket-label { margin-bottom: 10px; min-height: 32px; }
+  .bucket-card.locked .bucket-label { color: var(--muted); }
+
+  /* Whole-card status. This is the at-a-glance signal — you should be able to
+     scan a day's four sections and see which are done without reading. The
+     badge inside still names the state for anyone who wants the detail.
+     Green is a receipt and shows for every role; red is a review judgement
+     and is applied only for roles that see review status. */
+  .bucket-card.is-in-drive {
+    background: var(--green-bg);
+    box-shadow: inset 0 0 0 2px var(--green-border), var(--shadow);
+  }
+  .bucket-card.is-denied {
+    background: var(--red-bg);
+    box-shadow: inset 0 0 0 2px var(--red-border), var(--shadow);
+  }
+  /* Inner surfaces need to lift off the tinted card or they disappear into it. */
+  .bucket-card.is-in-drive .file-item,
+  .bucket-card.is-denied .file-item { background: var(--veil-strong); }
+  .bucket-card.is-in-drive .dropzone,
+  .bucket-card.is-denied .dropzone { background: var(--veil-soft); }
+  .dropzone {
+    border: 2px dashed var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface-2);
+    padding: 20px 10px;
+    text-align: center;
+    color: var(--muted-light);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .dropzone.drag-over { border-color: var(--navy); background: var(--navy-tint); color: var(--navy); }
+  .dropzone input { display: none; }
+  .browse-link { color: var(--navy); text-decoration: underline; }
+
+  /* Phones can't drag files, so they get different wording. */
+  .dz-touch { display: none; }
+
+  .file-list { margin-top: 10px; }
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--field-bg);
+    padding: 8px 10px;
+    border-radius: 7px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .file-item .remove { color: var(--faint); cursor: pointer; font-size: 14px; }
+  .file-item .remove:hover { color: var(--red-fg); }
+  .file-item .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-item .file-link { color: inherit; text-decoration: none; }
+  .file-item .file-link:hover { color: var(--navy); text-decoration: underline; }
+  .file-item .right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .empty-note { font-size: 11.5px; color: var(--faint); margin-top: 8px; text-align: center; }
+
+  /* Drive upload state, shown per file */
+  .drive-tag { font-size: 10.5px; padding: 2px 6px; border-radius: 20px; white-space: nowrap; }
+  .drive-tag.pending { color: var(--faint); }
+  .drive-tag.ok      { color: var(--green-fg); background: var(--green-bg); text-decoration: none; }
+  .drive-tag.err     { color: var(--red-fg);   background: var(--red-bg); cursor: help; }
+
+  .status-row { margin-top: 10px; }
+  .approve-deny { display: flex; gap: 6px; align-items: center; }
+  .approve-deny .btn { flex: 1; padding: 6px 4px; }
+  .approve-deny .badge { flex: 0 0 auto; }
+
+  /* ---------- Comments ---------- */
+  .comments-card { margin-top: 14px; }
+  .comments-card label { margin-bottom: 8px; }
+  .comments-card textarea {
+    width: 100%;
+    min-height: 90px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+  }
+  .comments-card textarea.saved { border-color: var(--green-border); }
+  .comments-card textarea[readonly] { color: var(--pill-fg); background: var(--field-bg); }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy-dark);
+    color: var(--on-accent);
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: var(--shadow-toast);
+    max-width: 90%;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ---------- Touch devices ----------
+     Keyed to pointer type rather than screen width, so a phone gets
+     finger-sized targets while a desktop stays compact. 44px is the
+     usual comfortable minimum. 16px inputs stop iOS zooming in when a
+     field is focused. */
+  @media (pointer: coarse) {
+    .btn,
+    .primary-btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .approve-deny .btn { padding: 6px 8px; }
+
+    .cal-day {
+      min-height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cal-nav {
+      min-height: 44px;
+      min-width: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .back-link { min-height: 44px; display: inline-flex; align-items: center; }
+
+    .check-row { min-height: 44px; }
+    .check-row input { width: 20px; height: 20px; }
+
+    .file-item .remove,
+    .file-item .preview {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    select,
+    textarea { font-size: 16px; }
+
+    .dropzone { padding: 28px 10px; }
+    .dz-desktop { display: none; }
+    .dz-touch   { display: inline; }
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">DEMO MODE — real data is shared between devices. Access codes are still public.</div>
+<div class="loading-bar" id="loadingBar" hidden>Loading…</div>
+<div class="sync-warning" id="syncWarning" hidden>Some changes could not be saved. Reload to see what is actually stored.</div>
+
+<header id="appHeader" hidden>
+  <h2 id="headerTitle">Property Paperwork Portal</h2>
+  <div class="header-actions">
+    <button class="btn" id="propertiesBtn" hidden>Manage Properties</button>
+    <button class="btn" id="adminBtn" hidden>Manage Users</button>
+    <button class="btn" id="logoutBtn">Log out</button>
+    <button class="theme-toggle" type="button"></button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-card">
+    <button class="theme-toggle" type="button"></button>
+    <h1>Property Paperwork Portal</h1>
+    <p>Enter your access code to continue.</p>
+    <label for="accessCode">Access Code</label>
+    <input type="password" id="accessCode" autocomplete="off" placeholder="Enter your code">
+    <div class="error" id="loginError"></div>
+    <button class="primary-btn" id="loginBtn">Continue</button>
+    <!-- The only place an access code still appears in this file. Codes are
+         checked by the server now; these are the seeded demo accounts,
+         printed for convenience while testing. DELETE THIS BLOCK before
+         anyone real uses the portal. -->
+    <div class="hint">
+      Demo codes — 54321 Miken (Area Manager) · 12345 Tony (Account Manager)<br>
+      13579 Sam (GSC) · 24680 Jordan (Front Desk)
+    </div>
+  </div>
+</div>
+
+<!-- PROPERTY LIST -->
+<div class="screen wide" id="propertyScreen">
+  <h2 style="font-size:16px; margin-bottom:16px;">Your Properties</h2>
+  <div id="propertyList"></div>
+</div>
+
+<!-- ACCESS CODE ADMIN -->
+<div class="screen wide" id="propertiesScreen">
+  <span class="back-link" id="backFromProperties">&larr; Back to properties</span>
+  <div class="admin-toolbar">
+    <div>
+      <h2 style="font-size:16px; margin:10px 0 6px;">Manage Properties</h2>
+      <p style="font-size:12.5px; color:var(--muted); margin:0;">
+        Retire a property to remove it from everyone's list. Its paperwork stays.
+      </p>
+    </div>
+    <button class="btn btn-navy" id="toggleNewPropertyBtn">+ Add Property</button>
+  </div>
+
+  <div class="user-form-card" id="newPropertyPanel" hidden>
+    <label for="newPropertyName">Property Name</label>
+    <input type="text" id="newPropertyName" placeholder="e.g. Hyatt Place Midtown">
+    <div class="picker-hint">
+      Check the spelling. A property cannot be renamed later — the name is how
+      every uploaded file and record is filed.
+    </div>
+    <div class="error" id="newPropertyError"></div>
+    <div class="user-form-actions">
+      <button class="btn btn-navy" id="createPropertyBtn">Add Property</button>
+      <button class="btn" id="cancelNewPropertyBtn">Cancel</button>
+    </div>
+  </div>
+
+  <div id="propertyAdminList"></div>
+</div>
+
+<div class="screen wide" id="propertyConfigScreen">
+  <span class="back-link" id="backFromPropertyConfig">&larr; Back to properties list</span>
+  <h2 id="propertyConfigTitle" style="font-size:16px; margin:10px 0 6px;"></h2>
+  <p style="font-size:12.5px; color:var(--muted); margin:0 0 4px;">
+    Untick a report to stop this property collecting it from anyone. Then pick a
+    person to change what they specifically are asked for here.
+  </p>
+  <div id="propertyItemList"></div>
+
+  <h2 style="font-size:16px; margin:22px 0 6px;">People assigned here</h2>
+  <div id="propertyUserList"></div>
+</div>
+
+<div class="screen wide" id="adminScreen">
+  <span class="back-link" id="backFromAdmin">&larr; Back to properties</span>
+  <div class="admin-toolbar">
+    <div>
+      <h2 style="font-size:16px; margin:10px 0 6px;">Manage Users</h2>
+      <p style="font-size:12.5px; color:#777; margin:0;">
+        One code per person. Revoke immediately if a code is shared or someone leaves.
+      </p>
+    </div>
+    <button class="btn btn-navy" id="toggleUserFormBtn">+ Add User</button>
+  </div>
+
+  <div class="user-form-card" id="userFormPanel" hidden>
+    <div class="form-grid">
+      <div>
+        <label for="userFormName">Name</label>
+        <input type="text" id="userFormName" placeholder="e.g. Dana Reyes">
+      </div>
+      <div>
+        <label for="userFormRole">Job Title</label>
+        <select id="userFormRole"><!-- filled in by renderRolePicker() --></select>
+      </div>
+      <div>
+        <label for="userFormEmail">Email</label>
+        <input type="email" id="userFormEmail" placeholder="name@company.com">
+      </div>
+      <div>
+        <label for="userFormPhone">Phone</label>
+        <input type="tel" id="userFormPhone" placeholder="(555) 010-0000">
+      </div>
+    </div>
+
+    <label style="margin-top:16px;">Assigned Properties</label>
+    <div class="picker-hint" id="propertyPickerHint"></div>
+    <div class="property-picker" id="userFormProperties"></div>
+
+    <div class="error" id="userFormErrorBox"></div>
+    <div class="user-form-actions">
+      <button class="btn btn-navy" id="saveUserBtn">Create User &amp; Generate Code</button>
+      <button class="btn" id="cancelUserFormBtn">Cancel</button>
+    </div>
+  </div>
+
+  <div id="userList"></div>
+</div>
+
+<!-- DAY DETAIL -->
+<div class="screen wide" id="uploadScreen">
+  <span class="back-link" id="backToProperties">&larr; Back to properties</span>
+  <h2 id="propertyTitle" style="font-size:16px; margin:10px 0 16px;"></h2>
+
+  <div class="calendar">
+    <div class="cal-header">
+      <span class="cal-nav" id="prevMonth">&lsaquo;</span>
+      <span id="calMonthLabel"></span>
+      <span class="cal-nav" id="nextMonth">&rsaquo;</span>
+    </div>
+    <div class="cal-weekdays">
+      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- Shown instead of the day view when configuration leaves this person
+       with nothing to do here. Empty cards would read as broken. -->
+  <div class="nothing-assigned" id="nothingAssigned" hidden>
+    <div class="name">Nothing is assigned to you at this property yet.</div>
+    <p>Your manager sets which paperwork each person submits at each property.
+       Contact them if you think this is wrong.</p>
+  </div>
+
+  <div class="selected-day-label" id="selectedDayLabel"></div>
+  <div class="day-status-card" id="dayStatusCard"></div>
+  <div class="totals grid-2" id="totals"></div>
+  <div class="buckets grid-2" id="buckets"></div>
+
+  <div class="comments-card">
+    <label class="field-label" for="comments">Comments:</label>
+    <textarea id="comments" placeholder="Any notes about today's paperwork..."></textarea>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- File preview. Embeds Google Drive's own viewer, so nothing is downloaded
+     or re-hosted — the file never leaves Drive. -->
+<div class="modal-backdrop" id="previewModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="previewTitle"></span>
+      <a class="btn btn-navy" id="previewOpen" target="_blank" rel="noopener">Open in Drive</a>
+      <button class="btn" id="previewClose">Close</button>
+    </div>
+    <iframe id="previewFrame" title="File preview" referrerpolicy="no-referrer"></iframe>
+    <div class="modal-note">
+      Blank or an error? This browser is signed into a Google account that can't
+      open the file. Drive decides that, not the portal.
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     CONFIG — in production most of this comes from your database
+     ============================================================ */
+
+  // Loaded from the Sheet at login, not hardcoded. Active properties only —
+  // a retired one keeps its paperwork but leaves every picker and list.
+  let PROPERTIES = [];
+
+  // Every property including retired ones, for the Manage Properties page.
+  let propertyRecords = [];
+
+  // Exceptions to the default visibility rules. Empty means everything
+  // follows the ROLES table, which is the state on day one.
+  let propertyConfig = [];
+
+  const BUCKETS = [
+    { id: "hotel-pms",       label: "Hotel PMS / Overnight Posting Report" },
+    { id: "pmc-overnight",   label: "PMC Overnight Posting Report" },
+    { id: "validation-usage",label: "Validation Usage Summary Report" },
+    { id: "sdr",             label: "SDR Report" }
+  ];
+
+  const TOTALS = [
+    { id: "pmc-overnight-total",     label: "PMC Overnight Posting Report Total" },
+    { id: "hotel-pms-revenue-total", label: "Hotel PMS Revenue Total" }
+  ];
+
+  // Fallback reminder contact for a property nobody is assigned to yet.
+  //
+  // Still hardcoded, and now the only place property names are. A property
+  // created through Manage Properties will have no entry here, so reminders
+  // for it fall back to nothing until someone is assigned. Acceptable while
+  // reminders are a stub; it goes away when recipient resolution moves to
+  // the server, which is already on the reminders backlog.
+  const PROPERTY_CONTACTS = {
+    "Embassy Suites Alpharetta":  { managerName: "Property Manager", phone: "(555) 010-1101", email: "manager1@example.com" },
+    "Hilton Garden Inn Downtown": { managerName: "Property Manager", phone: "(555) 010-1102", email: "manager2@example.com" },
+    "Courtyard Marriott North":   { managerName: "Property Manager", phone: "(555) 010-1103", email: "manager3@example.com" },
+    "Residence Inn Westside":     { managerName: "Property Manager", phone: "(555) 010-1104", email: "manager4@example.com" },
+    "Hampton Inn Eastgate":       { managerName: "Property Manager", phone: "(555) 010-1105", email: "manager5@example.com" }
+  };
+
+  const ROLE   = { AREA: 'area', ACCOUNT: 'account', GSC: 'gsc', FRONT_DESK: 'front-desk' };
+  // APPROVED / PAST_DUE apply to a whole day, which is still approved by hand.
+  // IN_DRIVE applies to a single bucket and is derived, never stored — a bucket
+  // is green because its files actually reached Drive, not because someone
+  // clicked something.
+  const STATUS = { APPROVED: 'approved', DENIED: 'denied', PAST_DUE: 'past-due',
+                   IN_DRIVE: 'in-drive', PENDING: '' };
+
+  /* ------------------------------------------------------------
+     ROLES — everything a role can do, in one table
+
+     Adding a role means adding one entry here; nothing else in the
+     file needs to change.
+
+       rank              seniority. You can only create roles at or
+                         below your own rank.
+       seesBuckets       'all', or a list of bucket ids. Buckets not
+                         listed are never rendered — the role has no
+                         idea those reports exist.
+       uploadsTo         same shape. Always a subset of seesBuckets.
+       seesUploadCount   property list shows "Uploads: x/y" instead of a plain
+                         uploaded / not-uploaded pill. For office roles who
+                         scan several properties at once; a single-property
+                         role gains nothing from it.
+       previewsFiles     can open a file inside the portal. Only useful for
+                         people whose Google account can actually open the
+                         file in Drive, so it is on for office roles and off
+                         for property-side ones — showing a preview button
+                         that returns a Google access error is worse than
+                         showing no button. Revisit when Drive moves to a
+                         PMC-owned account.
+       seesTotals        the dollar figures are visible at all.
+       editsTotals       …and can be typed into.
+       editsComments     can write in the comments box, not just read it.
+       seesReviewStatus  approved / denied / past due / pending. Off
+                         for client-side roles like hotel staff.
+       reviewsSubmittals can deny a bucket, and approve or unapprove a whole
+                         day. There is no per-bucket approve — a bucket goes
+                         green on its own once its files reach Drive.
+       managesUsers      can reach the Manage Users screen: create users,
+                         reissue codes, revoke and delete.
+       singleProperty    tied to exactly one hotel, and skips the
+                         property list on login.
+     ------------------------------------------------------------ */
+
+  const ROLES = {
+    [ROLE.AREA]: {
+      label: 'Area Manager',
+      rank: 4,
+      seesBuckets: 'all',
+      uploadsTo: 'all',
+      previewsFiles: true,
+      seesUploadCount: true,
+      seesTotals: true,
+      editsTotals: true,
+      editsComments: true,
+      seesReviewStatus: true,
+      reviewsSubmittals: true,
+      managesUsers: true,
+      singleProperty: false
+    },
+    [ROLE.ACCOUNT]: {
+      label: 'Account Manager',
+      rank: 3,
+      seesBuckets: 'all',
+      uploadsTo: 'all',
+      previewsFiles: true,
+      seesUploadCount: true,
+      seesTotals: true,
+      editsTotals: true,
+      editsComments: true,
+      seesReviewStatus: true,
+      reviewsSubmittals: false,
+      managesUsers: false,
+      singleProperty: false
+    },
+    [ROLE.GSC]: {
+      label: 'GSC',
+      rank: 2,
+      seesBuckets: ['hotel-pms'],
+      uploadsTo: ['hotel-pms'],
+      previewsFiles: false,
+      seesUploadCount: false,
+      seesTotals: false,
+      editsTotals: false,
+      editsComments: true,
+      seesReviewStatus: true,
+      reviewsSubmittals: false,
+      managesUsers: false,
+      singleProperty: false
+    },
+    [ROLE.FRONT_DESK]: {
+      label: 'Front Desk',
+      rank: 1,
+      seesBuckets: ['hotel-pms'],
+      uploadsTo: ['hotel-pms'],
+      previewsFiles: false,
+      seesUploadCount: false,
+      seesTotals: false,
+      editsTotals: false,
+      editsComments: true,
+      seesReviewStatus: false,
+      reviewsSubmittals: false,
+      managesUsers: false,
+      singleProperty: true
+    }
+  };
+
+  const roleLabel = role => (ROLES[role] ? ROLES[role].label : role);
+
+  /* ------------------------------------------------------------
+     ACCESS CODES
+
+     Codes are checked by the Apps Script against the Users tab of the
+     Sheet. They are not in this file and cannot be read from the page.
+
+     Still outstanding: codes are stored in the Sheet as plain text
+     rather than hashed, and the endpoint has no rate limiting of its
+     own — it only delays a failed answer. Both need a real backend to
+     fix properly. See CHANGELOG known issues.
+
+     `properties: 'all'` means the user sees every property.
+     ------------------------------------------------------------ */
+
+  // Users no longer live in this file. The list is fetched from the Sheet
+  // when an Area Manager opens Manage Users, and only they can fetch it.
+  // Access codes reach the browser exactly once: the one a person typed in
+  // and the server confirmed.
+  let knownUsers = [];
+
+  const MAX_ATTEMPTS  = 5;
+  const LOCKOUT_MS    = 30000;
+
+  /* ============================================================
+     APP STATE
+     ============================================================ */
+
+  let currentUser     = null;   // set on successful code entry
+  // The code the signed-in person typed, kept for this session so admin
+  // actions can prove who is asking. Never written to storage, cleared on
+  // logout, and gone the moment the tab closes.
+  let currentCode     = null;
+  let currentProperty = null;
+  let selectedDate    = new Date();
+  let calendarViewDate = startOfMonth(selectedDate);
+
+  let failedAttempts  = 0;
+  let lockedUntil     = 0;
+
+  const currentRole = () => (currentUser ? currentUser.role : null);
+
+  // Every permission check reads one flag off the ROLES table above, so
+  // the answer to "what can this role do" lives in exactly one place.
+  const rules = () => ROLES[currentRole()] || {};
+  const can   = flag => Boolean(rules()[flag]);
+
+  const canReviewSubmittals = () => can('reviewsSubmittals');
+  // seesTotals / editsTotals are still read, but through canSeeEntry and
+  // canEditEntry below — they are the role-level default that per-entry
+  // config overrides, rather than the whole answer.
+  const canEditComments     = () => can('editsComments');
+  const canManageCodes      = () => can('managesUsers');
+  const canSeeReviewStatus  = () => can('seesReviewStatus');
+  const canPreviewFiles     = () => can('previewsFiles');
+  const canSeeUploadCount   = () => can('seesUploadCount');
+  const isSingleProperty    = () => can('singleProperty');
+
+  // Bucket rules are either 'all' or a list of ids.
+  const inScope = (scope, id) => scope === 'all' || (Array.isArray(scope) && scope.includes(id));
+
+  /* ------------------------------------------------------------
+     CONFIGURATION CASCADE
+
+     What a person is prompted for at a property is three questions,
+     each answered somewhere different:
+
+       role      what can this role EVER see?        ROLES table below
+       property  what does this site collect?        PropertyConfig
+       user      what does this person do here?      PropertyConfig
+
+     An item shows when the property collects it AND the person's own
+     override says yes — or, with no override, their role's default does.
+
+     Only exceptions are stored. With no config rows at all this resolves
+     to exactly the ROLES table, which is the state before anyone opens
+     Manage Properties.
+
+     `property` defaults to whatever is open, and `user` to whoever is
+     signed in, so existing call sites read the same as they always did.
+     ------------------------------------------------------------ */
+
+  // The single most specific config row that applies, or null.
+  function configFor(property, itemType, itemId, user) {
+    const rows = propertyConfig.filter(r =>
+      r.property === property && r.itemType === itemType && r.itemId === itemId);
+
+    const forUser = user && rows.filter(r => r.scope === 'user' && r.subject === user.id);
+    if (forUser && forUser.length) return forUser[0];
+
+    const forRole = user && rows.filter(r => r.scope === 'role' && r.subject === user.role);
+    if (forRole && forRole.length) return forRole[0];
+
+    const forProperty = rows.filter(r => r.scope === 'property');
+    return forProperty.length ? forProperty[0] : null;
+  }
+
+  // A property-scope row switching something off wins over everything —
+  // a site that does not collect a report cannot have one person who does.
+  function propertyCollects(property, itemType, itemId) {
+    const row = propertyConfig.filter(r =>
+      r.property === property && r.scope === 'property' &&
+      r.itemType === itemType && r.itemId === itemId);
+    return row.length ? row[0].visible : true;
+  }
+
+  function canSeeItem(itemType, itemId, property, user) {
+    const who = user || currentUser;
+    const where = property || currentProperty;
+    if (!who) return false;
+    if (!where) return inScope((ROLES[who.role] || {}).seesBuckets, itemId);
+
+    if (!propertyCollects(where, itemType, itemId)) return false;
+
+    const config = configFor(where, itemType, itemId, who);
+    if (config) return config.visible;
+    return inScope((ROLES[who.role] || {}).seesBuckets, itemId);
+  }
+
+  function canEditItem(itemType, itemId, property, user) {
+    if (!canSeeItem(itemType, itemId, property, user)) return false;
+
+    const who = user || currentUser;
+    const where = property || currentProperty;
+    const config = where && configFor(where, itemType, itemId, who);
+    if (config) return config.editable;
+    return inScope((ROLES[who.role] || {}).uploadsTo, itemId);
+  }
+
+  const canEditBucket = (bucketId, property, user) =>
+    canEditItem('bucket', bucketId, property, user);
+
+  const visibleBuckets = (property, user) =>
+    BUCKETS.filter(b => canSeeItem('bucket', b.id, property, user));
+
+  /* Entries work the same way, with one difference: the ROLES table has no
+     per-entry list to fall back on — only `seesTotals` and `editsTotals`,
+     which cover every entry at once.
+
+     That is enough. The all-or-nothing flags stay the default, and config
+     rows override individual entries on top. A GSC sees no figures by
+     default, and giving them one — an arrivals count, say — is a single
+     config row rather than a change to the role. */
+
+  function canSeeEntry(entryId, property, user) {
+    const who = user || currentUser;
+    const where = property || currentProperty;
+    if (!who) return false;
+
+    const roleDefault = Boolean((ROLES[who.role] || {}).seesTotals);
+    if (!where) return roleDefault;
+
+    if (!propertyCollects(where, 'entry', entryId)) return false;
+
+    const config = configFor(where, 'entry', entryId, who);
+    return config ? config.visible : roleDefault;
+  }
+
+  function canEditEntry(entryId, property, user) {
+    if (!canSeeEntry(entryId, property, user)) return false;
+
+    const who = user || currentUser;
+    const where = property || currentProperty;
+    const config = where && configFor(where, 'entry', entryId, who);
+    return config ? config.editable : Boolean((ROLES[who.role] || {}).editsTotals);
+  }
+
+  const visibleEntries = (property, user) =>
+    TOTALS.filter(t => canSeeEntry(t.id, property, user));
+
+  // You can create anyone at or below your own rank.
+  function creatableRoles() {
+    const myRank = rules().rank || 0;
+    return Object.keys(ROLES).filter(r => ROLES[r].rank <= myRank);
+  }
+
+  // Each user only sees the properties assigned to them.
+  function visibleProperties() {
+    if (!currentUser) return [];
+    if (currentUser.properties === 'all') return PROPERTIES;
+    return PROPERTIES.filter(p => currentUser.properties.includes(p));
+  }
+
+  /* ============================================================
+     SMALL UTILITIES
+     ============================================================ */
+
+  const $ = id => document.getElementById(id);
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function formatDateKey(d) {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  }
+
+  function parseDateKey(dayKey) {
+    const [y, m, d] = dayKey.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDateLabel(d) {
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+
+  function startOfToday() {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }
+
+  function isSameDate(a, b) {
+    return a.getFullYear() === b.getFullYear()
+        && a.getMonth()    === b.getMonth()
+        && a.getDate()     === b.getDate();
+  }
+
+  const selectedDayKey = () => formatDateKey(selectedDate);
+
+  /* ============================================================
+     DATA LAYER — SWAP POINT FOR A REAL BACKEND
+
+     Every read below answers from `store`, an object held in memory.
+     Every write updates `store` and then hands the change to persist().
+
+     That split is the whole design. Rendering asks questions constantly
+     and expects an answer immediately, so reads must never touch the
+     network. Only two things are allowed to be slow: filling the store
+     up front, and saving afterwards.
+
+     An earlier version of this comment suggested replacing each function
+     body with a fetch(). Do not — that makes every read asynchronous,
+     which forces every render function and every one of their callers to
+     become async too. Fill the store instead and leave these alone.
+
+     CURRENT STATE: store is filled from localStorage and persist() writes
+     back to it, so behaviour is exactly as before. Next steps replace the
+     fill with a load from the Sheet, and persist() with a save to it.
+     See DATABASE-PLAN.md §4.
+     ============================================================ */
+
+  const key = (...parts) => parts.join('::');
+
+  // Everything the app currently knows, for the property and month in view.
+  // Keys are `<kind>::<property>::<date>[::<bucket>]` — a shape inherited
+  // from the localStorage version, kept because SHEET SYNC relies on being
+  // able to find every key for a property and date range by splitting them.
+  const store = Object.create(null);
+
+  const readValue = (k, fallback = '') => (k in store ? store[k] : fallback);
+
+  function writeValue(k, value) {
+    store[k] = value;
+    persist(k, value);
+  }
+
+  /** Where a change goes after memory. See SHEET SYNC below. */
+  function persist(k, value) {
+    const request = requestFor(k, value);
+    if (request) queueWrite(request);
+  }
+
+  /** Forgets everything loaded. Called on logout so the next person to
+   *  sign in on this device does not see the last person's properties. */
+  function emptyStore() {
+    Object.keys(store).forEach(k => { delete store[k]; });
+  }
+
+  function getFiles(property, day, bucketId) {
+    return JSON.parse(readValue(key('paperwork', property, day, bucketId), '[]'));
+  }
+  function saveFiles(property, day, bucketId, files) {
+    writeValue(key('paperwork', property, day, bucketId), JSON.stringify(files));
+  }
+
+  function getTotal(property, day, fieldId) {
+    return readValue(key('total', property, day, fieldId));
+  }
+  function saveTotal(property, day, fieldId, value) {
+    writeValue(key('total', property, day, fieldId), value);
+  }
+
+  function getComment(property, day) {
+    return readValue(key('comments', property, day));
+  }
+  function saveComment(property, day, value) {
+    writeValue(key('comments', property, day), value);
+  }
+
+  function getBucketStatus(property, day, bucketId) {
+    return readValue(key('bstatus', property, day, bucketId));
+  }
+  function setBucketStatus(property, day, bucketId, value) {
+    writeValue(key('bstatus', property, day, bucketId), value);
+  }
+
+  function getDayStatus(property, day) {
+    return readValue(key('dstatus', property, day));
+  }
+  function setDayStatus(property, day, value) {
+    writeValue(key('dstatus', property, day), value);
+  }
+
+  // Audit trail: who set the status, and when. This is the main reason
+  // codes are per-person rather than shared.
+  function getActor(scope, property, day, bucketId) {
+    return readValue(key(scope + '-by', property, day, bucketId || ''));
+  }
+  function setActor(scope, property, day, bucketId, name) {
+    writeValue(key(scope + '-by', property, day, bucketId || ''), name);
+  }
+
+  /* ============================================================
+     DRIVE UPLOAD — SWAP POINT FOR REAL FILE STORAGE
+
+     Sends the actual file to a Google Apps Script web app, which saves
+     it into Tony's Drive under:
+
+       PMC Paperwork / <property> / <YYYY-MM> / <YYYY-MM-DD>
+
+     The script is deployed with "Execute as: Me", so it writes using
+     Tony's Drive permissions and nobody uploading has to sign into
+     Google. Source lives in apps-script-receiver.gs alongside this file.
+
+     Two details that matter if you change this:
+
+     - Content-Type is deliberately text/plain. Sending application/json
+       makes the browser fire a CORS preflight request that Apps Script
+       cannot answer, and the upload fails. text/plain counts as a
+       "simple request" and skips the preflight. The body is still JSON;
+       only the header is a lie.
+     - Files are sent base64-encoded, which inflates them by about a
+       third in transit. Apps Script caps a request at 50 MB, so the
+       practical file limit is roughly 35 MB.
+
+     There is no password on the endpoint yet — see CHANGELOG backlog.
+     ============================================================ */
+
+  const DRIVE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzitQ4axLL_rvQPZQPPpwMCSwC_Ycv218nCMnviYOONbnkeDBF8ermBUv_ugjalVZUIgQ/exec';
+
+  // Roughly the largest file we can push through a 50 MB request once
+  // base64 has grown it by ~33%.
+  const MAX_UPLOAD_BYTES = 35 * 1024 * 1024;
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      // readAsDataURL gives "data:<mime>;base64,<payload>" — we want the payload.
+      reader.onload  = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = () => reject(new Error('Could not read this file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadToDrive(file, property, dayKey, bucketId) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new Error('File is too large (limit is about 35 MB).');
+    }
+
+    const bucket = BUCKETS.find(b => b.id === bucketId);
+
+    // bucket is the ID — that is what records are looked up by when they
+    // come back. bucketLabel is only used to name the file in Drive.
+    return sheetPost({
+      action      : 'upload',
+      property    : property,
+      date        : dayKey,
+      bucket      : bucketId,
+      bucketLabel : bucket ? bucket.label : bucketId,
+      filename    : file.name,
+      mimeType    : file.type || 'application/octet-stream',
+      data        : await fileToBase64(file),
+      by          : actorName()
+    });
+  }
+
+  /* ============================================================
+     SHEET SYNC
+
+     Turns the Sheet into the store, and store changes back into Sheet
+     writes. This is the only part of the app that knows the backend
+     exists — everything above reads and writes memory and stays
+     synchronous. See DATABASE-PLAN.md.
+     ============================================================ */
+
+  const COMMENT_ENTRY = 'comments';
+  const MAX_WRITE_TRIES = 3;
+
+  const actorName = () => (currentUser && currentUser.name) || '';
+  const monthKeyOf = date => formatDateKey(date).slice(0, 7);
+
+  /* ---------- talking to the script ---------- */
+
+  // A plain GET with no custom headers stays a "simple request" and skips
+  // the CORS preflight Apps Script cannot answer. Do not add headers here.
+  async function sheetGet(params) {
+    const qs = Object.keys(params)
+      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+      .join('&');
+
+    const res = await fetch(DRIVE_ENDPOINT + '?' + qs);
+    if (!res.ok) throw new Error('server returned ' + res.status);
+
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'request rejected');
+    return data;
+  }
+
+  // text/plain for the same reason — application/json triggers the preflight.
+  async function sheetPost(body) {
+    const res = await fetch(DRIVE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('server returned ' + res.status);
+
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'request rejected');
+    return data;
+  }
+
+  /* ---------- Sheet records -> store ---------- */
+
+  /**
+   * Drops everything already held for a property/date range before
+   * applying what came back. Without this, something deleted on another
+   * device would linger here forever — the response says nothing about
+   * rows that no longer exist.
+   */
+  function clearScope(properties, datePrefix) {
+    const wanted = {};
+    properties.forEach(p => { wanted[p] = true; });
+
+    Object.keys(store).forEach(k => {
+      const parts = k.split('::');
+      // Every data key is <kind>::<property>::<date>[::<bucket>].
+      if (parts.length < 3) return;
+      if (wanted[parts[1]] && parts[2].indexOf(datePrefix) === 0) delete store[k];
+    });
+  }
+
+  function applyRecords(data) {
+    // Files arrive one row per file and have to be regrouped into the
+    // per-bucket lists the app renders from.
+    const lists = {};
+    (data.submissions || []).forEach(s => {
+      const k = key('paperwork', s.property, s.date, s.bucket);
+      (lists[k] = lists[k] || []).push({
+        name: s.filename,
+        driveStatus: 'ok',      // a row exists, so it landed
+        driveUrl: s.driveUrl,
+        driveId: s.driveId
+      });
+    });
+    Object.keys(lists).forEach(k => { store[k] = JSON.stringify(lists[k]); });
+
+    (data.entries || []).forEach(e => {
+      store[e.entryId === COMMENT_ENTRY
+        ? key('comments', e.property, e.date)
+        : key('total', e.property, e.date, e.entryId)] = e.value;
+    });
+
+    (data.statuses || []).forEach(s => {
+      if (s.scope === 'day') {
+        store[key('dstatus', s.property, s.date)] = s.status;
+        store[key('dstatus-by', s.property, s.date, '')] = s.actor;
+      } else {
+        store[key('bstatus', s.property, s.date, s.bucket)] = s.status;
+        store[key('bstatus-by', s.property, s.date, s.bucket)] = s.actor;
+      }
+    });
+  }
+
+  /* ---------- loading ---------- */
+
+  let loadsInFlight = 0;
+  function setLoading(on) {
+    loadsInFlight += on ? 1 : -1;
+    $('loadingBar').hidden = loadsInFlight <= 0;
+  }
+
+  async function loadToday(properties) {
+    if (!properties.length) return;
+    setLoading(true);
+    try {
+      const data = await sheetGet({ action: 'today', properties: properties.join('|') });
+      clearScope(properties, data.date);
+      applyRecords(data);
+    } catch (err) {
+      showToast('Could not load the latest data — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMonth(property, monthDate) {
+    const month = monthKeyOf(monthDate);
+    setLoading(true);
+    try {
+      const data = await sheetGet({ action: 'month', property: property, month: month });
+      clearScope([property], month);
+      applyRecords(data);
+    } catch (err) {
+      showToast('Could not load ' + month + ' — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ---------- writing ---------- */
+
+  /**
+   * Which Sheet write a changed store key means — or none.
+   *
+   * Two kinds are deliberately not sent. `paperwork::` lists are owned by
+   * the upload endpoint, which writes the row itself; sending them again
+   * would duplicate every file. `*-by::` keys are a side effect of a
+   * status write, and the status request already carries the actor.
+   */
+  function requestFor(k, value) {
+    const p = k.split('::');
+    switch (p[0]) {
+      case 'total':
+        return { action: 'entry', property: p[1], date: p[2],
+                 entryId: p[3], value: value, by: actorName() };
+      case 'comments':
+        return { action: 'entry', property: p[1], date: p[2],
+                 entryId: COMMENT_ENTRY, value: value, by: actorName() };
+      case 'bstatus':
+        return { action: 'status', property: p[1], date: p[2],
+                 scope: 'bucket', bucket: p[3], status: value, by: actorName() };
+      case 'dstatus':
+        return { action: 'status', property: p[1], date: p[2],
+                 scope: 'day', status: value, by: actorName() };
+      default:
+        return null;
+    }
+  }
+
+  const writeQueue = [];
+  let flushing = false;
+
+  function queueWrite(request) {
+    writeQueue.push({ request: request, tries: 0 });
+    flushWrites();
+  }
+
+  /**
+   * Sends queued writes one at a time, retrying a few times before giving
+   * up. Sequential rather than parallel on purpose: two writes to the same
+   * row racing each other is exactly what the lock on the server is there
+   * to prevent, and not creating the race is cheaper than resolving it.
+   */
+  async function flushWrites() {
+    if (flushing) return;
+    flushing = true;
+    try {
+      while (writeQueue.length) {
+        const job = writeQueue[0];
+        try {
+          await sheetPost(job.request);
+          writeQueue.shift();
+        } catch (err) {
+          job.tries++;
+          if (job.tries < MAX_WRITE_TRIES) {
+            await pause(600 * job.tries);
+          } else {
+            writeQueue.shift();
+            showToast('A change could not be saved — ' + err.message);
+            $('syncWarning').hidden = false;
+          }
+        }
+      }
+    } finally {
+      flushing = false;
+    }
+  }
+
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  /* ============================================================
+     DERIVED STATUS
+     ============================================================ */
+
+  // How many of a day's sections have something in them. Counts sections, not
+  // files — four files in one bucket is still one section covered. Measured
+  // against the buckets the signed-in role can see, so the denominator always
+  // matches what that person would find on the day view.
+  function bucketsWithUploads(property, day, buckets = BUCKETS) {
+    return buckets.filter(b => getFiles(property, day, b.id).length > 0).length;
+  }
+
+  const dayHasAnyUploads = (property, day, buckets = BUCKETS) =>
+    bucketsWithUploads(property, day, buckets) > 0;
+
+  // "Approved" is the only status anyone sets by hand. A day that has
+  // come and gone without approval counts as past due automatically.
+  function getEffectiveDayStatus(property, dayKey) {
+    if (getDayStatus(property, dayKey) === STATUS.APPROVED) return STATUS.APPROVED;
+    if (parseDateKey(dayKey) < startOfToday()) return STATUS.PAST_DUE;
+    return STATUS.PENDING;
+  }
+
+  function statusLabel(status) {
+    switch (status) {
+      case STATUS.APPROVED: return 'Approved';
+      case STATUS.DENIED:   return 'Denied';
+      case STATUS.PAST_DUE: return 'Past Due';
+      case STATUS.IN_DRIVE: return 'In Drive';
+      default:              return 'Pending Review';
+    }
+  }
+
+  function badgeHtml(status) {
+    return `<span class="badge ${status || 'pending'}">${statusLabel(status)}</span>`;
+  }
+
+  // A bucket's state is mostly derived rather than stored. Denial is the only
+  // thing a person sets by hand — "this paperwork is wrong" is a judgement.
+  // Green is not a judgement: it means the files physically reached Drive,
+  // which the app can tell on its own, so there is no Approve button.
+  function getEffectiveBucketStatus(property, dayKey, bucketId) {
+    if (getBucketStatus(property, dayKey, bucketId) === STATUS.DENIED) return STATUS.DENIED;
+
+    const files = getFiles(property, dayKey, bucketId);
+    if (files.length === 0) return STATUS.PENDING;
+
+    // Every file has to have landed. One still uploading, or one that failed,
+    // leaves the whole bucket short of green.
+    const allLanded = files.every(f => f.driveStatus === 'ok');
+    return allLanded ? STATUS.IN_DRIVE : STATUS.PENDING;
+  }
+
+  /* ============================================================
+     NOTIFICATIONS — STUB ONLY, NOTHING IS ACTUALLY SENT
+
+     This is where texting/emailing plugs in later. In production
+     sendReminder() would POST to your backend:
+
+       POST /api/reminders  { property, day, channel: "sms" | "email" }
+
+     The backend then calls a real sending service — Twilio for SMS,
+     SendGrid/Postmark/Gmail API for email — using the phone and email
+     on each assigned user's record, falling back to PROPERTY_CONTACTS
+     for properties nobody is assigned to yet. For now it only logs.
+     ============================================================ */
+
+  // Who should hear about this property: everyone with an active code
+  // assigned to it, minus whoever clicked the button.
+  // knownUsers is only populated for an Area Manager who has opened Manage
+  // Codes — nobody else is allowed to read the user list. Everyone else
+  // falls through to PROPERTY_CONTACTS. When reminders become real this
+  // resolution moves to the server, which can see every user regardless of
+  // who is asking.
+  function reminderRecipients(property) {
+    const assigned = knownUsers.filter(u =>
+      u.active &&
+      u.id !== (currentUser && currentUser.id) &&
+      (u.properties === 'all' || u.properties.includes(property))
+    );
+
+    if (assigned.length > 0) return assigned;
+
+    // Fallback for properties with nobody assigned yet.
+    const fallback = PROPERTY_CONTACTS[property];
+    return fallback
+      ? [{ name: fallback.managerName, email: fallback.email, phone: fallback.phone }]
+      : [];
+  }
+
+  function sendReminder(property) {
+    const recipients = reminderRecipients(property);
+    const message = `Reminder: paperwork for ${property} on ${formatDateLabel(selectedDate)} is still pending.`;
+
+    if (recipients.length === 0) {
+      showToast(`Nobody is assigned to ${property} yet — add a user with this property to send reminders.`);
+      return;
+    }
+
+    recipients.forEach(r => {
+      console.log(`[DEMO] Would text ${r.phone || '(no phone)'} and email ${r.email || '(no email)'}: "${message}"`);
+    });
+
+    const names = recipients.map(r => r.name).join(', ');
+    showToast(`Demo reminder "sent" to ${names}. Nothing was actually texted or emailed.`);
+  }
+
+  /* ============================================================
+     THEME
+
+     The head of the document applies a saved choice before anything
+     renders, to avoid a white flash. This part handles the toggle and
+     keeps the buttons' icons honest.
+
+     Three states, two of them explicit:
+       data-theme="dark"  / "light"  — the user chose
+       no attribute                  — follow the device
+     Storage failing is not fatal; the theme just stops persisting,
+     which is the right outcome in private browsing.
+     ============================================================ */
+
+  const THEME_KEY = 'theme';
+  const prefersDark = () =>
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  const activeTheme = () =>
+    document.documentElement.getAttribute('data-theme') || (prefersDark() ? 'dark' : 'light');
+
+  function refreshThemeToggles() {
+    const dark = activeTheme() === 'dark';
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      // The icon shows where the button takes you, not where you are.
+      btn.textContent = dark ? '☀' : '☾';
+      btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+      btn.setAttribute('aria-label', btn.title);
+    });
+  }
+
+  function toggleTheme() {
+    const next = activeTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* not fatal */ }
+    refreshThemeToggles();
+  }
+
+  let toastTimer;
+  function showToast(message) {
+    const toast = $('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 4500);
+  }
+
+  /* ============================================================
+     NAVIGATION
+     ============================================================ */
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+
+  function showLoginError(message) {
+    const error = $('loginError');
+    error.textContent = message;
+    error.style.display = message ? 'block' : 'none';
+  }
+
+  /**
+   * The code goes to the server and the server decides. The lockout below
+   * is a courtesy to the person mistyping, not a security measure — anyone
+   * can edit what runs in their own browser. Real throttling lives on the
+   * other end and is still weak; see CHANGELOG known issues.
+   */
+  async function login() {
+    const input = $('accessCode');
+    const code = input.value.trim();
+
+    const waitMs = lockedUntil - Date.now();
+    if (waitMs > 0) {
+      showLoginError(`Too many attempts. Try again in ${Math.ceil(waitMs / 1000)} seconds.`);
+      return;
+    }
+
+    if (!code) {
+      showLoginError('Please enter your access code.');
+      return;
+    }
+
+    showLoginError('');
+    setLoading(true);
+
+    let result;
+    try {
+      result = await sheetPost({ action: 'login', code: code });
+    } catch (err) {
+      showLoginError('Could not reach the server — ' + err.message);
+      return;
+    } finally {
+      setLoading(false);
+    }
+
+    if (!result.user) {
+      failedAttempts++;
+      if (failedAttempts >= MAX_ATTEMPTS) {
+        lockedUntil = Date.now() + LOCKOUT_MS;
+        failedAttempts = 0;
+        showLoginError(`Too many attempts. Locked for ${LOCKOUT_MS / 1000} seconds.`);
+      } else {
+        showLoginError(result.error || 'Code not recognized.');
+      }
+      input.select();
+      return;
+    }
+
+    failedAttempts = 0;
+    input.value = '';
+
+    // Held for this session only, so admin actions can prove who is asking.
+    // Never written to storage.
+    currentCode = code;
+    startSession(result.user);
+  }
+
+  async function startSession(user) {
+    currentUser = user;
+
+    // Must land before anything renders — visibleProperties() and every
+    // picker read PROPERTIES synchronously.
+    await loadProperties();
+
+    $('appHeader').hidden = false;
+    $('adminBtn').hidden = !canManageCodes();
+    // Same gate as Manage Users for now: both are Area Manager only.
+    $('propertiesBtn').hidden = !canManageCodes();
+    $('backToProperties').hidden = isSingleProperty();
+
+    // Single-hotel users land directly on their hotel — no property list,
+    // no back link, and the header shows the hotel rather than their role.
+    const onlyProperty = visibleProperties()[0];
+    if (isSingleProperty() && onlyProperty) {
+      $('headerTitle').textContent = onlyProperty;
+      openProperty(onlyProperty);
+      return;
+    }
+
+    $('headerTitle').textContent = `${user.name} — ${roleLabel(user.role)}`;
+    showPropertyList();
+  }
+
+  /**
+   * Renders immediately from whatever is already in memory, then refreshes
+   * from the Sheet and repaints. Waiting for the network before showing
+   * anything would make every trip back to this list feel broken.
+   */
+  async function showPropertyList() {
+    renderPropertyList();
+    showScreen('propertyScreen');
+
+    const properties = visibleProperties();
+    await loadToday(properties);
+
+    // The user may have moved on while that was in flight.
+    if ($('propertyScreen').classList.contains('active')) renderPropertyList();
+  }
+
+  function logout() {
+    currentUser = null;
+    currentCode = null;
+    currentProperty = null;
+    knownUsers = [];
+    PROPERTIES = [];
+    propertyRecords = [];
+    propertyConfig = [];
+    // Loaded records belong to the person who was signed in, not to this
+    // browser. Leaving them would show the next user someone else's work.
+    emptyStore();
+    $('appHeader').hidden = true;
+    $('adminBtn').hidden = true;
+    $('propertiesBtn').hidden = true;
+    $('accessCode').value = '';
+    showLoginError('');
+    showScreen('loginScreen');
+  }
+
+  async function openProperty(name) {
+    currentProperty = name;
+    selectedDate = new Date();
+    calendarViewDate = startOfMonth(selectedDate);
+    // Redundant for single-hotel users — their header already says it.
+    $('propertyTitle').hidden = isSingleProperty();
+    $('propertyTitle').textContent = name;
+
+    renderDayView();
+    showScreen('uploadScreen');
+
+    await loadMonth(name, calendarViewDate);
+    if (currentProperty === name) renderDayView();
+  }
+
+  async function changeMonth(delta) {
+    calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + delta, 1);
+    renderCalendar();
+
+    const property = currentProperty;
+    const viewing = calendarViewDate;
+    await loadMonth(property, viewing);
+    if (currentProperty === property && calendarViewDate === viewing) renderCalendar();
+  }
+
+  // Everything on the day-detail screen, refreshed together.
+  function renderDayView() {
+    // Configuration can leave someone with no buckets and no entries here.
+    // That is a real state — assigned to a property before anyone decided
+    // what they do at it — so it gets an explanation rather than a page of
+    // empty cards, which reads as broken and gets reported as a bug.
+    const hasWork = visibleBuckets().length > 0 || visibleEntries().length > 0;
+
+    $('nothingAssigned').hidden = hasWork;
+    ['selectedDayLabel', 'dayStatusCard', 'totals', 'buckets'].forEach(id => {
+      $(id).hidden = !hasWork;
+    });
+    // Comments stay — being able to say something is the one thing that
+    // still makes sense when you have nothing else here.
+    if (!hasWork) {
+      renderCalendar();
+      renderComments();
+      return;
+    }
+
+    renderCalendar();
+    renderDayStatus();
+    renderTotals();
+    renderBuckets();
+    renderComments();
+  }
+
+  /* ============================================================
+     RENDER — PROPERTY LIST
+     ============================================================ */
+
+  function renderPropertyList() {
+    const list = $('propertyList');
+    const today = new Date();
+    const todayKey = formatDateKey(today);
+    const todayLabel = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    list.innerHTML = '';
+    const properties = visibleProperties();
+
+    if (properties.length === 0) {
+      list.innerHTML = '<div class="empty-note">No properties are assigned to your account.</div>';
+      return;
+    }
+
+    properties.forEach(name => {
+      const status = getEffectiveDayStatus(name, todayKey);
+
+      // Computed per property, not once for the list: two properties can
+      // ask this person for different reports, so the denominator differs.
+      const buckets = visibleBuckets(name);
+
+      // Office roles get the count; single-report roles get the plain pill,
+      // since "1/1" tells them nothing they don't already know.
+      let uploadHtml;
+      if (canSeeUploadCount()) {
+        const done = bucketsWithUploads(name, todayKey, buckets);
+        uploadHtml = `<div class="status ${done === buckets.length ? 'done' : ''}">Uploads: ${done}/${buckets.length}</div>`;
+      } else {
+        const uploaded = dayHasAnyUploads(name, todayKey, buckets);
+        uploadHtml = `<div class="status ${uploaded ? 'done' : ''}">${uploaded ? 'Uploaded' : 'No upload yet'}</div>`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'property-card';
+      card.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(name)}</div>
+          <div class="sub">Today: ${todayLabel}</div>
+        </div>
+        <div class="meta">
+          ${uploadHtml}
+          ${badgeHtml(status)}
+        </div>
+      `;
+      card.addEventListener('click', () => openProperty(name));
+      list.appendChild(card);
+    });
+  }
+
+  /* ============================================================
+     RENDER — ACCESS CODE ADMIN (area manager only)
+     ============================================================ */
+
+
+  // Job title dropdown — only roles at or below your own level.
+  function renderRolePicker() {
+    const select = $('userFormRole');
+    select.innerHTML = creatableRoles()
+      .sort((a, b) => ROLES[b].rank - ROLES[a].rank)
+      .map(r => `<option value="${r}">${roleLabel(r)}</option>`)
+      .join('');
+
+    // Default to the most junior role you can create — the safe choice,
+    // and the one you'll pick most often.
+    select.value = select.options[select.options.length - 1].value;
+  }
+
+  // Property picker on the user form. Single-hotel roles get radio
+  // buttons so only one can be chosen; everyone else gets checkboxes.
+  function renderPropertyPicker() {
+    const box = $('userFormProperties');
+    const role = $('userFormRole').value;
+    const single = Boolean(ROLES[role] && ROLES[role].singleProperty);
+    const type = single ? 'radio' : 'checkbox';
+
+    box.innerHTML = PROPERTIES.map((name, i) => `
+      <label class="check-row">
+        <input type="${type}" name="userFormProperty" value="${escapeHtml(name)}" id="np-${i}">
+        <span>${escapeHtml(name)}</span>
+      </label>
+    `).join('');
+
+    $('propertyPickerHint').textContent = single
+      ? `${roleLabel(role)} users are assigned to exactly one hotel.`
+      : '';
+  }
+
+  // Which user the form is editing, or null when it is creating one. The
+  // same panel does both — the fields are identical, and two forms that
+  // must stay in step is two forms that eventually do not.
+  let editingUserId = null;
+
+  // The form stays collapsed so the user list is what you see first.
+  function setUserFormOpen(open, user) {
+    editingUserId = (open && user) ? user.id : null;
+
+    $('userFormPanel').hidden = !open;
+    $('toggleUserFormBtn').textContent = open ? 'Close' : '+ Add User';
+    $('saveUserBtn').textContent = editingUserId
+      ? 'Save Changes'
+      : 'Create User & Generate Code';
+
+    if (!open) {
+      ['userFormName', 'userFormEmail', 'userFormPhone'].forEach(id => { $(id).value = ''; });
+      showUserFormError('');
+      return;
+    }
+
+    renderRolePicker();
+    if (user) $('userFormRole').value = user.role;
+
+    renderPropertyPicker();
+
+    $('userFormName').value  = user ? user.name : '';
+    $('userFormEmail').value = user ? (user.email || '') : '';
+    $('userFormPhone').value = user ? (user.phone || '') : '';
+
+    if (user) tickAssignedProperties(user.properties);
+
+    showUserFormError('');
+    $('userFormName').focus();
+  }
+
+  // 'all' means every property, including ones added later, so it ticks
+  // everything currently known rather than storing a list.
+  function tickAssignedProperties(properties) {
+    const assigned = properties === 'all' ? PROPERTIES : properties;
+    $('userFormProperties').querySelectorAll('input').forEach(input => {
+      input.checked = assigned.indexOf(input.value) > -1;
+    });
+  }
+
+  function showUserFormError(message) {
+    const el = $('userFormErrorBox');
+    el.textContent = message;
+    el.style.display = message ? 'block' : 'none';
+  }
+
+  async function saveUser() {
+    const name  = $('userFormName').value.trim();
+    const role  = $('userFormRole').value;
+    const email = $('userFormEmail').value.trim();
+    const phone = $('userFormPhone').value.trim();
+    const selected = Array.from($('userFormProperties').querySelectorAll('input:checked'))
+      .map(cb => cb.value);
+
+    // Belt and braces: the dropdown already excludes roles above your own,
+    // but the real server would re-check this rather than trust the browser.
+    if (!creatableRoles().includes(role)) {
+      return showUserFormError('You cannot create a user at that level.');
+    }
+
+    if (!name)  return showUserFormError('Enter a name.');
+    if (!email && !phone) return showUserFormError('Enter an email or a phone number so reminders can reach them.');
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) return showUserFormError('That email address does not look right.');
+    const singleOnly = ROLES[role].singleProperty;
+
+    if (selected.length === 0) {
+      return showUserFormError(
+        singleOnly ? 'Choose the hotel this user works at.' : 'Assign at least one property.'
+      );
+    }
+    if (singleOnly && selected.length > 1) {
+      return showUserFormError(`${roleLabel(role)} users can only be assigned to one hotel.`);
+    }
+
+    showUserFormError('');
+
+    // Area managers oversee everything, so selecting every property is
+    // stored as 'all' — new properties added later are included automatically.
+    const properties = (role === ROLE.AREA && selected.length === PROPERTIES.length)
+      ? 'all' : selected;
+
+    const editing = editingUserId;
+
+    setLoading(true);
+    let result;
+    try {
+      result = editing
+        ? await sheetPost({ action: 'editUser', code: currentCode, id: editing,
+                            name, role, email, phone, properties })
+        // The code is generated on the server. Generating it here would put
+        // it back in the page, which is the thing this whole change undid.
+        : await sheetPost({ action: 'createUser', code: currentCode,
+                            name, role, email, phone, properties });
+    } catch (err) {
+      return showUserFormError(
+        (editing ? 'Could not save those changes — ' : 'Could not create that user — ') + err.message);
+    } finally {
+      setLoading(false);
+    }
+
+    setUserFormOpen(false);
+    await loadUsers();
+
+    showToast(editing
+      ? `${name} updated. Their access code is unchanged.`
+      : `${name} added. Access code: ${result.code} — copy it now, they will need it to log in.`);
+  }
+
+  /**
+   * Properties and their configuration, fetched once at login.
+   *
+   * Everything downstream reads these synchronously, so this has to land
+   * before the first render — same reason the store is filled up front.
+   */
+  async function loadProperties() {
+    setLoading(true);
+    try {
+      const result = await sheetPost({ action: 'properties', code: currentCode });
+      propertyRecords = result.properties;
+      propertyConfig  = result.config;
+      PROPERTIES = propertyRecords.filter(p => p.active).map(p => p.name);
+    } catch (err) {
+      showToast('Could not load properties — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /** Fetches the user list. Refused by the server for anyone but an admin. */
+  async function loadUsers() {
+    setLoading(true);
+    try {
+      const result = await sheetPost({ action: 'users', code: currentCode });
+      knownUsers = result.users;
+    } catch (err) {
+      showToast('Could not load the user list — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+    renderAdmin();
+  }
+
+  /**
+   * One path for revoke, restore, new code and delete. The server does the
+   * work and we reload rather than patching the local copy, so the screen
+   * always shows what is actually stored.
+   */
+  async function changeUser(user, change, toastFor) {
+    setLoading(true);
+    try {
+      const result = await sheetPost({
+        action: 'updateUser', code: currentCode, id: user.id, change: change
+      });
+      showToast(toastFor(result));
+    } catch (err) {
+      showToast('That did not work — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+    await loadUsers();
+  }
+
+  function renderAdmin() {
+    const list = $('userList');
+    list.innerHTML = '';
+
+    if (knownUsers.length === 0) {
+      list.innerHTML = '<div class="empty-note">No users loaded.</div>';
+      return;
+    }
+
+    knownUsers.forEach(user => {
+      const scope = user.properties === 'all'
+        ? 'All properties'
+        : `${user.properties.length} propert${user.properties.length === 1 ? 'y' : 'ies'}`;
+
+      // You can't revoke or delete the account you're signed in with —
+      // that would lock you out of the screen you're standing on. The
+      // server refuses this too; matching on id rather than object
+      // identity because these are now separate copies.
+      const isSelf = user.id === (currentUser && currentUser.id);
+
+      const row = document.createElement('div');
+      row.className = 'user-card' + (user.active ? '' : ' revoked');
+      row.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(user.name)}${isSelf ? ' <span class="you-tag">you</span>' : ''}</div>
+          <div class="sub">${roleLabel(user.role)} · ${scope}</div>
+          <div class="sub">${escapeHtml(user.email || 'no email')} · ${escapeHtml(user.phone || 'no phone')}</div>
+          <div class="code-value">Code: <strong>${escapeHtml(user.code)}</strong></div>
+        </div>
+        <div class="user-actions">
+          <span class="badge ${user.active ? 'approved' : 'denied'}">${user.active ? 'Active' : 'Revoked'}</span>
+          <button class="btn" data-action="edit">Edit</button>
+          <button class="btn" data-action="regenerate">New Code</button>
+          ${isSelf ? '' : `<button class="btn" data-action="toggle">${user.active ? 'Revoke' : 'Restore'}</button>`}
+          ${(!isSelf && !user.active) ? '<button class="btn btn-danger" data-action="delete">Delete</button>' : ''}
+        </div>
+      `;
+
+      row.querySelector('[data-action="edit"]').addEventListener('click', () => {
+        setUserFormOpen(true, user);
+        $('userFormPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      row.querySelector('[data-action="regenerate"]').addEventListener('click', () =>
+        changeUser(user, 'newCode', r => `New code for ${user.name}: ${r.code}`));
+
+      const toggleBtn = row.querySelector('[data-action="toggle"]');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () =>
+          changeUser(user, user.active ? 'revoke' : 'restore',
+            () => `${user.name}'s code is now ${user.active ? 'revoked' : 'active'}.`));
+      }
+
+      const deleteBtn = row.querySelector('[data-action="delete"]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => deleteUser(user));
+      }
+
+      list.appendChild(row);
+    });
+  }
+
+  // Only reachable once a user has been revoked, so deletion is always a
+  // deliberate second step. Past approvals keep the person's name — the
+  // audit trail is history and should survive the account being removed.
+  function deleteUser(user) {
+    const ok = confirm(
+      `Delete ${user.name} permanently?\n\n` +
+      `Their access code stops working and they disappear from this list. ` +
+      `Approvals they already made keep their name on record.\n\n` +
+      `This cannot be undone.`
+    );
+    if (!ok) return;
+
+    changeUser(user, 'delete', () => `${user.name} deleted.`);
+  }
+
+  /* ============================================================
+     RENDER — MANAGE PROPERTIES (area manager only)
+     ============================================================ */
+
+  function renderPropertyAdmin() {
+    const list = $('propertyAdminList');
+    list.innerHTML = '';
+
+    if (propertyRecords.length === 0) {
+      list.innerHTML = '<div class="empty-note">No properties yet.</div>';
+      return;
+    }
+
+    propertyRecords.forEach(property => {
+      const assigned = knownUsers.filter(u =>
+        u.properties === 'all' || u.properties.indexOf(property.name) > -1).length;
+
+      const row = document.createElement('div');
+      row.className = 'user-card' + (property.active ? '' : ' revoked');
+      row.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(property.name)}</div>
+          <div class="sub">${assigned} ${assigned === 1 ? 'person' : 'people'} assigned</div>
+        </div>
+        <div class="user-actions">
+          <span class="badge ${property.active ? 'approved' : 'denied'}">${property.active ? 'Active' : 'Retired'}</span>
+          ${property.active ? '<button class="btn" data-action="configure">Configure</button>' : ''}
+          <button class="btn" data-action="toggle">${property.active ? 'Retire' : 'Restore'}</button>
+        </div>
+      `;
+
+      // Retired properties have nothing to configure — nobody can submit to
+      // them, so what they collect is moot until they are restored.
+      const configureBtn = row.querySelector('[data-action="configure"]');
+      if (configureBtn) {
+        configureBtn.addEventListener('click', () => openPropertyConfig(property));
+      }
+
+      row.querySelector('[data-action="toggle"]').addEventListener('click', () =>
+        setPropertyActive(property, !property.active));
+
+      list.appendChild(row);
+    });
+  }
+
+  async function setPropertyActive(property, active) {
+    if (!active) {
+      const ok = confirm(
+        `Retire ${property.name}?\n\n` +
+        `It disappears from everyone's property list and nobody can submit ` +
+        `paperwork for it. Everything already submitted is kept, and you can ` +
+        `restore it at any time.`
+      );
+      if (!ok) return;
+    }
+
+    setLoading(true);
+    try {
+      await sheetPost({ action: 'setPropertyActive', code: currentCode,
+                        name: property.name, active: active });
+      showToast(`${property.name} ${active ? 'restored' : 'retired'}.`);
+    } catch (err) {
+      showToast('That did not work — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+
+    await loadProperties();
+    renderPropertyAdmin();
+  }
+
+  async function createProperty() {
+    const name = $('newPropertyName').value.trim();
+    if (!name) return newPropertyError('Enter a property name.');
+
+    // The server checks this too — it has to, since two people could submit
+    // at once — but catching it here gives a better message than a failed
+    // request would.
+    const clash = propertyRecords.some(p => p.name.toLowerCase() === name.toLowerCase());
+    if (clash) return newPropertyError(`There is already a property called "${name}".`);
+
+    newPropertyError('');
+    setLoading(true);
+    try {
+      await sheetPost({ action: 'createProperty', code: currentCode, name: name });
+    } catch (err) {
+      return newPropertyError('Could not add that property — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+
+    setNewPropertyOpen(false);
+    await loadProperties();
+    renderPropertyAdmin();
+    showToast(`${name} added. Assign people to it from Manage Users.`);
+  }
+
+  function setNewPropertyOpen(open) {
+    $('newPropertyPanel').hidden = !open;
+    $('toggleNewPropertyBtn').textContent = open ? 'Close' : '+ Add Property';
+    if (open) { $('newPropertyName').focus(); return; }
+    $('newPropertyName').value = '';
+    newPropertyError('');
+  }
+
+  function newPropertyError(message) {
+    const el = $('newPropertyError');
+    el.textContent = message;
+    el.style.display = message ? 'block' : 'none';
+  }
+
+  /* ============================================================
+     RENDER — ONE PROPERTY'S CONFIGURATION
+
+     Two levels on one screen: what the property collects at all, and
+     what each assigned person is asked for. The third level, the role
+     default, is not edited here — it lives in the ROLES table and is
+     what these toggles start from.
+     ============================================================ */
+
+  let configProperty = null;   // which property this screen is showing
+
+  function openPropertyConfig(property) {
+    configProperty = property;
+    $('propertyConfigTitle').textContent = property.name;
+    renderPropertyItems();
+    renderPropertyUsers();
+    showScreen('propertyConfigScreen');
+  }
+
+  const CONFIG_ITEMS = () =>
+    BUCKETS.map(b => ({ type: 'bucket', id: b.id, label: b.label }))
+      .concat(TOTALS.map(t => ({ type: 'entry', id: t.id, label: t.label })));
+
+  /** Property level: does this site collect this report at all? */
+  function renderPropertyItems() {
+    const box = $('propertyItemList');
+    box.innerHTML = '';
+
+    CONFIG_ITEMS().forEach(item => {
+      const collected = propertyCollects(configProperty.name, item.type, item.id);
+
+      const row = document.createElement('label');
+      row.className = 'check-row';
+      row.innerHTML = `
+        <input type="checkbox" ${collected ? 'checked' : ''}>
+        <span>${escapeHtml(item.label)}</span>
+      `;
+      row.querySelector('input').addEventListener('change', e =>
+        writeConfig({
+          property: configProperty.name, scope: 'property', subject: '',
+          itemType: item.type, itemId: item.id,
+          // Ticked is the default, so it clears the row rather than storing
+          // one that agrees with the default. The tab holds exceptions only.
+          visible: e.target.checked ? null : false, editable: false
+        }, () => { renderPropertyItems(); renderPropertyUsers(); })
+      );
+      box.appendChild(row);
+    });
+  }
+
+  /** Everyone assigned here, minus roles this person may not configure. */
+  function renderPropertyUsers() {
+    const box = $('propertyUserList');
+    box.innerHTML = '';
+
+    const myRank = rules().rank || 0;
+    const assigned = knownUsers.filter(u =>
+      (u.properties === 'all' || u.properties.indexOf(configProperty.name) > -1) &&
+      (ROLES[u.role] ? ROLES[u.role].rank : 0) < myRank);
+
+    if (assigned.length === 0) {
+      box.innerHTML = '<div class="empty-note">Nobody you can configure is assigned here yet. ' +
+                      'Assign people from Manage Users.</div>';
+      return;
+    }
+
+    assigned.forEach(user => {
+      const seen = CONFIG_ITEMS().filter(i =>
+        i.type === 'bucket' ? canSeeItem('bucket', i.id, configProperty.name, user)
+                            : canSeeEntry(i.id, configProperty.name, user));
+
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(user.name)}</div>
+          <div class="sub">${roleLabel(user.role)} · asked for ${seen.length} of ${CONFIG_ITEMS().length}</div>
+        </div>
+        <div class="user-actions">
+          <button class="btn" data-action="configure">Configure</button>
+        </div>
+      `;
+      card.querySelector('[data-action="configure"]')
+          .addEventListener('click', () => openUserConfig(user));
+      box.appendChild(card);
+    });
+  }
+
+  /**
+   * Per-user grid, rendered into the card in place rather than on its own
+   * screen — the point is comparing this person against the property, and
+   * a separate screen would hide what they are being compared to.
+   */
+  function openUserConfig(user) {
+    const existing = $('userConfigPanel');
+    if (existing) existing.remove();
+
+    const panel = document.createElement('div');
+    panel.className = 'user-form-card';
+    panel.id = 'userConfigPanel';
+
+    const rows = CONFIG_ITEMS().map(item => {
+      const collected = propertyCollects(configProperty.name, item.type, item.id);
+      const visible = item.type === 'bucket'
+        ? canSeeItem('bucket', item.id, configProperty.name, user)
+        : canSeeEntry(item.id, configProperty.name, user);
+      const editable = item.type === 'bucket'
+        ? canEditBucket(item.id, configProperty.name, user)
+        : canEditEntry(item.id, configProperty.name, user);
+
+      // A report the property does not collect cannot be granted to one
+      // person — say so rather than showing a toggle that will not stick.
+      return `
+        <label class="check-row">
+          <input type="checkbox" data-type="${item.type}" data-id="${item.id}"
+                 data-edit="${editable ? 'yes' : 'no'}"
+                 ${visible ? 'checked' : ''} ${collected ? '' : 'disabled'}>
+          <span>${escapeHtml(item.label)}${collected ? '' : ' — not collected here'}</span>
+        </label>
+      `;
+    }).join('');
+
+    panel.innerHTML = `
+      <label style="margin-bottom:8px;">What ${escapeHtml(user.name)} is asked for here</label>
+      ${rows}
+      <div class="picker-hint">
+        Unticked means they are not asked for it at this property. Their other
+        properties are unaffected.
+      </div>
+      <div class="user-form-actions">
+        <button class="btn" id="closeUserConfigBtn">Done</button>
+      </div>
+    `;
+
+    panel.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.addEventListener('change', () => {
+        const roleDefault = input.dataset.type === 'bucket'
+          ? inScope((ROLES[user.role] || {}).seesBuckets, input.dataset.id)
+          : Boolean((ROLES[user.role] || {}).seesTotals);
+
+        writeConfig({
+          property: configProperty.name, scope: 'user', subject: user.id,
+          itemType: input.dataset.type, itemId: input.dataset.id,
+          // Back to matching their role means no row at all, so the tab
+          // keeps answering "what is different about this person".
+          visible: input.checked === roleDefault ? null : input.checked,
+          editable: input.checked && input.dataset.edit === 'yes'
+        }, () => { renderPropertyUsers(); openUserConfig(user); });
+      });
+    });
+
+    $('propertyUserList').appendChild(panel);
+    panel.querySelector('#closeUserConfigBtn').addEventListener('click', () => panel.remove());
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /** One write path for both levels, so the reload after is never forgotten. */
+  async function writeConfig(row, afterwards) {
+    setLoading(true);
+    try {
+      await sheetPost(Object.assign({ action: 'setConfig', code: currentCode }, row));
+    } catch (err) {
+      showToast('Could not save that — ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+    await loadProperties();
+    if (afterwards) afterwards();
+  }
+
+  /* ============================================================
+     RENDER — CALENDAR
+     ============================================================ */
+
+  function renderCalendar() {
+    const year  = calendarViewDate.getFullYear();
+    const month = calendarViewDate.getMonth();
+    const today = new Date();
+
+    $('calMonthLabel').textContent =
+      calendarViewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const grid = $('calGrid');
+    grid.innerHTML = '';
+
+    // Blank cells so the 1st lands on the right weekday.
+    const leadingBlanks = new Date(year, month, 1).getDay();
+    for (let i = 0; i < leadingBlanks; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'cal-day empty';
+      grid.appendChild(blank);
+    }
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const classes = ['cal-day'];
+
+      if (isSameDate(date, today))        classes.push('today');
+      if (isSameDate(date, selectedDate)) classes.push('selected');
+
+      if (currentProperty) {
+        const dayKey = formatDateKey(date);
+
+        // The upload dot stays — that is the user's own receipt, not a
+        // judgement — but it only counts buckets this role can see. The
+        // approved / past-due rings are review state, so client-side
+        // users don't get them.
+        if (dayHasAnyUploads(currentProperty, dayKey, visibleBuckets())) classes.push('has-files');
+
+        if (canSeeReviewStatus()) {
+          const status = getEffectiveDayStatus(currentProperty, dayKey);
+          if (status) classes.push(status);
+        }
+      }
+
+      const cell = document.createElement('div');
+      cell.className = classes.join(' ');
+      cell.textContent = day;
+      cell.addEventListener('click', () => {
+        selectedDate = date;
+        renderDayView();
+      });
+      grid.appendChild(cell);
+    }
+
+    $('selectedDayLabel').textContent = `Uploads for ${formatDateLabel(selectedDate)}`;
+  }
+
+  /* ============================================================
+     RENDER — DAY STATUS
+     ============================================================ */
+
+  function renderDayStatus() {
+    const card = $('dayStatusCard');
+
+    // Client-side users never see review state at all.
+    card.hidden = !canSeeReviewStatus();
+    if (card.hidden) return;
+
+    const dayKey = selectedDayKey();
+    const status = getEffectiveDayStatus(currentProperty, dayKey);
+    const isApproved = status === STATUS.APPROVED;
+
+    const actor = isApproved ? getActor('dstatus', currentProperty, dayKey) : '';
+    const actorHtml = actor ? `<span class="status-actor">by ${escapeHtml(actor)}</span>` : '';
+
+    if (!canReviewSubmittals()) {
+      card.innerHTML = `
+        <span class="field-label">Overall Day Status</span>
+        <div class="day-status-actions">${badgeHtml(status)}${actorHtml}</div>
+      `;
+      return;
+    }
+
+    card.innerHTML = `
+      <span class="field-label">Overall Day Status</span>
+      <div class="day-status-actions">
+        ${badgeHtml(status)}${actorHtml}
+        <button class="btn ${isApproved ? 'is-approved' : ''}" data-action="approve-day">
+          ${isApproved ? 'Unapprove Day' : 'Approve Day'}
+        </button>
+        <button class="btn btn-navy" data-action="remind">Send Reminder</button>
+      </div>
+    `;
+    card.querySelector('[data-action="approve-day"]').addEventListener('click', toggleDayApproved);
+    card.querySelector('[data-action="remind"]').addEventListener('click', () => sendReminder(currentProperty));
+  }
+
+  function toggleDayApproved() {
+    const dayKey = selectedDayKey();
+    const approving = getDayStatus(currentProperty, dayKey) !== STATUS.APPROVED;
+
+    setDayStatus(currentProperty, dayKey, approving ? STATUS.APPROVED : STATUS.PENDING);
+    setActor('dstatus', currentProperty, dayKey, null, approving ? currentUser.name : '');
+
+    renderDayStatus();
+    renderCalendar();
+  }
+
+  /* ============================================================
+     RENDER — TOTALS (account manager enters these)
+     ============================================================ */
+
+  function renderTotals() {
+    const container = $('totals');
+
+    // Which entries this person is asked for here — not all or nothing any
+    // more, since a property or a single user can be configured per entry.
+    const fields = visibleEntries();
+
+    container.hidden = fields.length === 0;
+    if (container.hidden) {
+      container.innerHTML = '';
+      return;
+    }
+
+    const dayKey = selectedDayKey();
+
+    container.innerHTML = '';
+    fields.forEach(field => {
+      const value = getTotal(currentProperty, dayKey, field.id);
+      const editable = canEditEntry(field.id);
+
+      const card = document.createElement('div');
+      card.className = 'total-card';
+      card.innerHTML = `
+        <label class="field-label">${field.label}</label>
+        <div class="total-input-wrap ${value ? 'saved' : ''}">
+          <span>$</span>
+          <input type="number" step="0.01" inputmode="decimal" placeholder="0.00"
+                 value="${escapeHtml(value)}" ${editable ? '' : 'readonly'}>
+        </div>
+      `;
+      container.appendChild(card);
+
+      if (!editable) return;
+
+      const input = card.querySelector('input');
+      const wrap  = card.querySelector('.total-input-wrap');
+      input.addEventListener('input', () => {
+        saveTotal(currentProperty, dayKey, field.id, input.value);
+        wrap.classList.toggle('saved', input.value !== '');
+      });
+    });
+  }
+
+  /* ============================================================
+     RENDER — UPLOAD BUCKETS
+     ============================================================ */
+
+  function renderBuckets() {
+    const container = $('buckets');
+    const dayKey = selectedDayKey();
+    const buckets = visibleBuckets();
+
+    // A lone bucket shouldn't sit in a half-width column.
+    container.classList.toggle('single', buckets.length === 1);
+
+    container.innerHTML = '';
+    buckets.forEach(bucket => {
+      const editable = canEditBucket(bucket.id);
+
+      const card = document.createElement('div');
+      card.className = 'bucket-card' + (editable ? '' : ' locked');
+      card.innerHTML = `
+        <div class="bucket-label field-label">${bucket.label}</div>
+        ${editable ? `
+          <div class="dropzone">
+            <span class="dz-desktop">Drag &amp; drop here, or <span class="browse-link">browse</span></span>
+            <span class="dz-touch browse-link">Tap to upload</span>
+            <input type="file" multiple>
+          </div>` : ''}
+        <div class="file-list"></div>
+        <div class="status-row"></div>
+      `;
+      container.appendChild(card);
+
+      if (editable) wireDropzone(card, bucket.id);
+
+      renderFileList(card, bucket.id, dayKey);
+      renderBucketStatus(card, bucket.id, dayKey);
+    });
+  }
+
+  function wireDropzone(card, bucketId) {
+    const dropzone  = card.querySelector('.dropzone');
+    const fileInput = card.querySelector('input[type="file"]');
+
+    // The whole zone opens the picker — a small "browse" link is a hard
+    // target on a phone. The guard stops the input's own click bubbling
+    // back up here and reopening the picker in a loop.
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('click', e => e.stopPropagation());
+    fileInput.addEventListener('change', () => addFiles(card, bucketId, fileInput.files));
+
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      addFiles(card, bucketId, e.dataTransfer.files);
+    });
+  }
+
+  // Per-file Drive state, for the two cases the bucket badge cannot express:
+  // still uploading, and failed. Success deliberately has no tag — the bucket
+  // badge going green covers it, and the file name becomes a link instead.
+  // Shown to every role including Front Desk, since this is the uploader's own
+  // receipt rather than a review judgement.
+  function driveTagHtml(file) {
+    if (file.driveStatus === 'pending') {
+      return '<span class="drive-tag pending">saving…</span>';
+    }
+    if (file.driveStatus === 'error') {
+      return `<span class="drive-tag err" title="${escapeHtml(file.driveError || '')}">not saved</span>`;
+    }
+    return '';
+  }
+
+  /* ------------------------------------------------------------
+     FILE PREVIEW
+
+     Embeds Google Drive's own viewer in an iframe. The file is never
+     downloaded, copied or re-hosted — Drive serves it directly and
+     enforces its own permissions, so this adds no access that the
+     viewer didn't already have.
+
+     Consequence worth knowing: it renders for anyone whose signed-in
+     Google account can open the file, and shows a Google error page to
+     anyone else. That is why `previewsFiles` is off for property-side
+     roles. Making it work for everyone would mean marking each uploaded
+     file link-shareable in apps-script-receiver.gs, which trades the
+     permission check away.
+     ------------------------------------------------------------ */
+
+  const drivePreviewUrl = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
+
+  const canPreview = file =>
+    canPreviewFiles() && file.driveStatus === 'ok' && Boolean(file.driveId);
+
+  function openPreview(file) {
+    $('previewTitle').textContent = file.name;
+    $('previewFrame').src = drivePreviewUrl(file.driveId);
+    $('previewOpen').href = file.driveUrl || drivePreviewUrl(file.driveId);
+    $('previewModal').hidden = false;
+  }
+
+  function closePreview() {
+    $('previewModal').hidden = true;
+    // Clearing the src stops the embedded viewer from continuing to run
+    // in the background after the dialog is closed.
+    $('previewFrame').src = '';
+    $('previewTitle').textContent = '';
+  }
+
+  // Once a file is in Drive its name becomes the link to it.
+  function fileNameHtml(file) {
+    const label = `📄 ${escapeHtml(file.name)}`;
+    if (file.driveStatus === 'ok' && file.driveUrl) {
+      return `<a class="file-name file-link" href="${escapeHtml(file.driveUrl)}" target="_blank" rel="noopener" title="Open in Google Drive">${label}</a>`;
+    }
+    return `<span class="file-name">${label}</span>`;
+  }
+
+  function renderFileList(card, bucketId, dayKey) {
+    const listEl = card.querySelector('.file-list');
+    const files = getFiles(currentProperty, dayKey, bucketId);
+    const editable = canEditBucket(bucketId);
+
+    listEl.innerHTML = '';
+    if (files.length === 0) {
+      listEl.innerHTML = '<div class="empty-note">No file yet</div>';
+      return;
+    }
+
+    files.forEach((file, index) => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `
+        ${fileNameHtml(file)}
+        <span class="right">
+          ${driveTagHtml(file)}
+          ${canPreview(file) ? '<button class="preview" title="Preview this file">👁</button>' : ''}
+          ${editable ? '<span class="remove" title="Remove from this list. The copy in Google Drive is not deleted.">✕</span>' : ''}
+        </span>
+      `;
+      if (canPreview(file)) {
+        item.querySelector('.preview').addEventListener('click', () => openPreview(file));
+      }
+      if (editable) {
+        item.querySelector('.remove').addEventListener('click', () => removeFile(card, bucketId, index));
+      }
+      listEl.appendChild(item);
+    });
+  }
+
+  function renderBucketStatus(card, bucketId, dayKey) {
+    const row = card.querySelector('.status-row');
+    const status = getEffectiveBucketStatus(currentProperty, dayKey, bucketId);
+    const denied = status === STATUS.DENIED;
+
+    // The card itself carries the status colour — that is the at-a-glance
+    // signal. Green is the uploader's receipt so every role gets it, including
+    // Front Desk. Red is a review judgement, so it follows seesReviewStatus
+    // for the same reason the badges and calendar rings do.
+    card.classList.toggle('is-in-drive', status === STATUS.IN_DRIVE);
+    card.classList.toggle('is-denied', denied && canSeeReviewStatus());
+
+    row.hidden = !canSeeReviewStatus();
+    if (row.hidden) return;
+
+    // Only a denial has a person attached to it. Green happens on its own.
+    const actor = denied ? getActor('bstatus', currentProperty, dayKey, bucketId) : '';
+    const actorHtml = actor ? `<div class="status-actor">by ${escapeHtml(actor)}</div>` : '';
+
+    if (!canReviewSubmittals()) {
+      row.innerHTML = badgeHtml(status) + actorHtml;
+      return;
+    }
+
+    row.innerHTML = `
+      <div class="approve-deny">
+        ${badgeHtml(status)}
+        <button class="btn ${denied ? 'is-denied' : ''}">
+          ${denied ? 'Undo Deny' : 'Deny'}
+        </button>
+      </div>
+      ${actorHtml}
+    `;
+    row.querySelector('button').addEventListener('click', () => {
+      toggleBucketDenied(card, bucketId, dayKey);
+    });
+  }
+
+  // Denial is the only bucket status a person sets, so this toggles one flag
+  // rather than taking a value. It took a status argument back when Approve
+  // and Deny shared a handler.
+  function toggleBucketDenied(card, bucketId, dayKey) {
+    const denied = getBucketStatus(currentProperty, dayKey, bucketId) === STATUS.DENIED;
+
+    setBucketStatus(currentProperty, dayKey, bucketId, denied ? STATUS.PENDING : STATUS.DENIED);
+    setActor('bstatus', currentProperty, dayKey, bucketId, denied ? '' : currentUser.name);
+
+    renderBucketStatus(card, bucketId, dayKey);
+  }
+
+  async function addFiles(card, bucketId, fileList) {
+    const incoming = Array.from(fileList);
+    if (incoming.length === 0) return;
+
+    // Capture these now. The user may click away to another property or
+    // day while an upload is still in flight, and the file still belongs
+    // where it was dropped.
+    const dayKey   = selectedDayKey();
+    const property = currentProperty;
+
+    // Record the files straight away so the list responds immediately,
+    // then upload them one at a time and update each row as it lands.
+    const startIndex = getFiles(property, dayKey, bucketId).length;
+    const files = getFiles(property, dayKey, bucketId);
+    incoming.forEach(f => files.push({ name: f.name, driveStatus: 'pending' }));
+    saveFiles(property, dayKey, bucketId, files);
+
+    // A fresh submission supersedes a previous denial — otherwise the bucket
+    // would stay red no matter what the manager sent to replace it.
+    if (getBucketStatus(property, dayKey, bucketId) === STATUS.DENIED) {
+      setBucketStatus(property, dayKey, bucketId, STATUS.PENDING);
+      setActor('bstatus', property, dayKey, bucketId, '');
+    }
+
+    renderFileList(card, bucketId, dayKey);
+    renderBucketStatus(card, bucketId, dayKey);
+    renderCalendar();
+
+    for (let i = 0; i < incoming.length; i++) {
+      let patch;
+      try {
+        const result = await uploadToDrive(incoming[i], property, dayKey, bucketId);
+        // driveId is stored for a future preview feature — Drive's embeddable
+        // viewer is addressed by file id, not by the share URL.
+        patch = { driveStatus: 'ok', driveUrl: result.url, driveId: result.fileId };
+      } catch (err) {
+        patch = { driveStatus: 'error', driveError: err.message };
+        showToast(`Could not save ${incoming[i].name} to Drive — ${err.message}`);
+      }
+      updateFileRecord(property, dayKey, bucketId, startIndex + i, patch);
+
+      // Only repaint if the user is still looking at this day. The bucket
+      // badge is repainted too — it turns green on the last file landing.
+      if (property === currentProperty && dayKey === selectedDayKey()) {
+        renderFileList(card, bucketId, dayKey);
+        renderBucketStatus(card, bucketId, dayKey);
+      }
+    }
+  }
+
+  // Merges fields into one stored file record without disturbing the others.
+  function updateFileRecord(property, dayKey, bucketId, index, patch) {
+    const files = getFiles(property, dayKey, bucketId);
+    if (!files[index]) return;
+    Object.assign(files[index], patch);
+    saveFiles(property, dayKey, bucketId, files);
+  }
+
+  // Marks the submission removed everywhere — the row is flagged in the
+  // Sheet, so it disappears for everyone rather than just this browser.
+  //
+  // The file itself is deliberately left in Drive. Deleting it would need
+  // a matching handler in apps-script-receiver.gs, and silently destroying
+  // submitted paperwork on a stray click is worse than leaving an orphan.
+  // See CHANGELOG known issues.
+  function removeFile(card, bucketId, index) {
+    const dayKey = selectedDayKey();
+    const files = getFiles(currentProperty, dayKey, bucketId);
+    const removed = files[index];
+
+    files.splice(index, 1);
+    saveFiles(currentProperty, dayKey, bucketId, files);
+
+    // File lists are not persisted like other values — the upload endpoint
+    // owns those rows — so a removal has to be sent explicitly.
+    if (removed && removed.driveId) {
+      queueWrite({
+        action: 'removeFile',
+        property: currentProperty,
+        date: dayKey,
+        bucket: bucketId,
+        driveId: removed.driveId
+      });
+    }
+    renderFileList(card, bucketId, dayKey);
+    renderBucketStatus(card, bucketId, dayKey);   // removing the last file drops it out of green
+    renderCalendar();
+  }
+
+  /* ============================================================
+     RENDER — COMMENTS
+     ============================================================ */
+
+  function renderComments() {
+    const dayKey = selectedDayKey();
+    const textarea = $('comments');
+    const editable = canEditComments();
+
+    textarea.value = getComment(currentProperty, dayKey);
+    textarea.readOnly = !editable;
+    textarea.classList.toggle('saved', textarea.value !== '');
+
+    textarea.oninput = editable
+      ? () => {
+          saveComment(currentProperty, dayKey, textarea.value);
+          textarea.classList.toggle('saved', textarea.value !== '');
+        }
+      : null;
+  }
+
+  /* ============================================================
+     WIRE UP STATIC CONTROLS
+     ============================================================ */
+
+  $('loginBtn').addEventListener('click', login);
+  $('logoutBtn').addEventListener('click', logout);
+  $('backToProperties').addEventListener('click', showPropertyList);
+
+  // Writes are queued and sent in the background, so it is possible to
+  // close the tab with something still unsent.
+  window.addEventListener('beforeunload', e => {
+    if (writeQueue.length) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+  $('prevMonth').addEventListener('click', () => changeMonth(-1));
+  $('nextMonth').addEventListener('click', () => changeMonth(1));
+
+  $('adminBtn').addEventListener('click', () => {
+    setUserFormOpen(false);
+    showScreen('adminScreen');
+    loadUsers();          // renders when it lands
+  });
+
+  $('propertiesBtn').addEventListener('click', async () => {
+    setNewPropertyOpen(false);
+    showScreen('propertiesScreen');
+    // The assigned-people count needs the user list, which this role can read.
+    await loadUsers();
+    renderPropertyAdmin();
+  });
+  $('backFromProperties').addEventListener('click', showPropertyList);
+  $('backFromPropertyConfig').addEventListener('click', () => {
+    showScreen('propertiesScreen');
+    renderPropertyAdmin();
+  });
+  $('toggleNewPropertyBtn').addEventListener('click', () => {
+    setNewPropertyOpen($('newPropertyPanel').hidden);
+  });
+  $('createPropertyBtn').addEventListener('click', createProperty);
+  $('cancelNewPropertyBtn').addEventListener('click', () => setNewPropertyOpen(false));
+  $('toggleUserFormBtn').addEventListener('click', () => {
+    setUserFormOpen($('userFormPanel').hidden);
+  });
+  $('cancelUserFormBtn').addEventListener('click', () => setUserFormOpen(false));
+
+  // Switching job title can change checkboxes to radios (single-hotel roles),
+  // which means rebuilding the picker. Keep whatever was already ticked, or
+  // changing someone's title mid-edit would silently clear their properties.
+  $('userFormRole').addEventListener('change', () => {
+    const wasTicked = Array.from(
+      $('userFormProperties').querySelectorAll('input:checked')).map(i => i.value);
+    renderPropertyPicker();
+    tickAssignedProperties(wasTicked);
+  });
+  $('saveUserBtn').addEventListener('click', saveUser);
+  $('backFromAdmin').addEventListener('click', () => showScreen('propertyScreen'));
+
+  $('accessCode').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  document.querySelectorAll('.theme-toggle').forEach(btn =>
+    btn.addEventListener('click', toggleTheme));
+
+  // Someone with no explicit choice should follow their device live — phones
+  // flip to dark on a schedule, and the icon would otherwise go stale.
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', () => {
+        if (!document.documentElement.hasAttribute('data-theme')) refreshThemeToggles();
+      });
+  }
+  refreshThemeToggles();
+
+  $('previewClose').addEventListener('click', closePreview);
+  // Clicking the dark area outside the dialog closes it; clicks inside must not.
+  $('previewModal').addEventListener('click', e => {
+    if (e.target === $('previewModal')) closePreview();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('previewModal').hidden) closePreview();
+  });
+})();
+</script>
+
+</body>
+</html>
